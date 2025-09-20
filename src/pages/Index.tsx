@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TemplatesList } from "@/components/templates/TemplatesList";
+import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { BrandingSettings } from "@/components/branding/BrandingSettings";
 import { TestingPanel } from "@/components/testing/TestingPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,18 +9,40 @@ import { Settings, Mail, Shield, TestTube } from "lucide-react";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("templates");
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
 
   const handleEditTemplate = (id: string) => {
-    console.log("Edit template:", id);
-    // TODO: Navigate to template editor
+    setEditingTemplate(id);
   };
 
   const handleCreateTemplate = () => {
-    console.log("Create new template");
-    // TODO: Navigate to template creator
+    setCreatingTemplate(true);
+  };
+
+  const handleBackToTemplates = () => {
+    setEditingTemplate(null);
+    setCreatingTemplate(false);
+  };
+
+  const handleSaveTemplate = (template: any) => {
+    console.log("Save template:", template);
+    setEditingTemplate(null);
+    setCreatingTemplate(false);
   };
 
   const renderContent = () => {
+    // Show template editor if editing or creating
+    if (editingTemplate || creatingTemplate) {
+      return (
+        <TemplateEditor
+          templateId={editingTemplate || undefined}
+          onBack={handleBackToTemplates}
+          onSave={handleSaveTemplate}
+        />
+      );
+    }
+
     switch (activeSection) {
       case "templates":
         return (
