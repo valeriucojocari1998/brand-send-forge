@@ -19,11 +19,14 @@ interface TemplateEditorProps {
 }
 
 const variableCategories = {
-  load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions"],
-  carrier: ["CarrierName", "DriverName", "CarrierEmail", "ContactPhone", "AuthorityNumber"],
-  financial: ["InvoiceID", "Amount", "Rate", "DueDate", "PaymentTerms", "TransactionID"],
-  company: ["CompanyName", "ContactPerson", "AccountManager", "BrokerName"],
-  system: ["Timestamp", "SystemDate", "UserName", "LoadStatus"]
+  load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions", "LoadStatus", "PreviousStatus"],
+  statuses: ["Dispatched", "Cancelled", "Released", "InTransit", "Delivered", "Pending", "OnHold", "Completed"],
+  roles: ["AccountManager", "CustomerSalesRep", "SalesManager", "Dispatcher", "CustomerSalesAgent", "Carrier", "Customer", "Driver", "ComplianceManager", "HRManager"],
+  carrier: ["CarrierName", "DriverName", "CarrierEmail", "ContactPhone", "AuthorityNumber", "MCNumber"],
+  customer: ["CustomerName", "CustomerEmail", "CustomerSalesRep", "CustomerSalesAgent"],
+  financial: ["InvoiceID", "Amount", "Rate", "DueDate", "PaymentTerms", "TransactionID", "StatementPeriod", "PaymentDate"],
+  company: ["CompanyName", "ContactPerson", "AccountManager", "BrokerName", "SupportContact"],
+  system: ["Timestamp", "SystemDate", "UserName", "CheckInTime", "CheckOutTime", "Location"]
 };
 
 export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorProps) {
@@ -310,8 +313,9 @@ Best regards,
                         id="fromAddress"
                         value={template.fromAddress}
                         onChange={(e) => setTemplate(prev => ({ ...prev, fromAddress: e.target.value }))}
-                        placeholder="dispatch@company.com"
+                        placeholder="dispatch@company.com or {{CompanyEmail}}"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Use variables like {"{"}{"{"}{"}"}CompanyEmail{"}"}{"}"} for dynamic addresses</p>
                     </div>
                     <div>
                       <Label htmlFor="replyTo">Reply-To Address</Label>
@@ -319,8 +323,9 @@ Best regards,
                         id="replyTo"
                         value={template.replyTo}
                         onChange={(e) => setTemplate(prev => ({ ...prev, replyTo: e.target.value }))}
-                        placeholder="support@company.com"
+                        placeholder="support@company.com or {{AccountManagerEmail}}"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Supports dynamic variables for role-based routing</p>
                     </div>
                   </div>
 
@@ -330,13 +335,14 @@ Best regards,
                       <Input
                         value={newCcEmail}
                         onChange={(e) => setNewCcEmail(e.target.value)}
-                        placeholder="Add CC email address"
+                        placeholder="email@company.com or {{CarrierEmail}}, {{CustomerEmail}}"
                         onKeyPress={(e) => e.key === 'Enter' && addEmailAddress('cc', newCcEmail)}
                       />
                       <Button size="sm" onClick={() => addEmailAddress('cc', newCcEmail)}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mb-2">Supports both static emails and dynamic variables</p>
                     <div className="flex flex-wrap gap-2">
                       {template.ccAddresses.map((email, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -356,13 +362,14 @@ Best regards,
                       <Input
                         value={newBccEmail}
                         onChange={(e) => setNewBccEmail(e.target.value)}
-                        placeholder="Add BCC email address"
+                        placeholder="email@company.com or {{AccountManagerEmail}}"
                         onKeyPress={(e) => e.key === 'Enter' && addEmailAddress('bcc', newBccEmail)}
                       />
                       <Button size="sm" onClick={() => addEmailAddress('bcc', newBccEmail)}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mb-2">Supports both static emails and dynamic variables</p>
                     <div className="flex flex-wrap gap-2">
                       {template.bccAddresses.map((email, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -386,19 +393,71 @@ Best regards,
                   <p className="text-sm text-muted-foreground">Configure when and how this template is triggered</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="triggerType">Trigger Type</Label>
+                      <Select defaultValue="load-status-change">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="load-status-change">Load Status Change</SelectItem>
+                          <SelectItem value="driver-checkin">Driver Check-In</SelectItem>
+                          <SelectItem value="driver-checkout">Driver Check-Out</SelectItem>
+                          <SelectItem value="payment-processed">Payment Processed</SelectItem>
+                          <SelectItem value="manual-trigger">Manual Trigger</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="triggerCondition">Trigger Condition</Label>
+                      <Select defaultValue="released">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dispatched">Status = Dispatched</SelectItem>
+                          <SelectItem value="cancelled">Status = Cancelled</SelectItem>
+                          <SelectItem value="released">Status = Released</SelectItem>
+                          <SelectItem value="in-transit">Status = In Transit</SelectItem>
+                          <SelectItem value="delivered">Status = Delivered</SelectItem>
+                          <SelectItem value="on-hold">Status = On Hold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Trigger Conditions</h4>
+                    <h4 className="font-medium mb-2">Current Trigger Configuration</h4>
                     <p className="text-sm text-muted-foreground">
-                      This template will be automatically sent when a load status changes to "Released" in the system.
+                      This template will be automatically sent when <strong>Load Status changes to "Released"</strong> in the system.
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="outline">Load Status Change</Badge>
+                      <Badge variant="outline">Status = Released</Badge>
+                    </div>
                   </div>
                   
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium mb-2">Advanced Automation (Pro Feature)</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Set up complex triggers, conditional logic, and multi-step automation workflows.
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <h4 className="font-medium mb-2">Advanced Automation Rules</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Set up complex triggers with multiple conditions, delays, and conditional logic.
                     </p>
-                    <Button variant="outline" size="sm" className="mt-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch id="delay-conditions" />
+                        <Label htmlFor="delay-conditions" className="text-sm">Enable delay-based conditions</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch id="conditional-logic" />
+                        <Label htmlFor="conditional-logic" className="text-sm">Enable conditional logic (IF/THEN)</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch id="multi-step" />
+                        <Label htmlFor="multi-step" className="text-sm">Enable multi-step workflows</Label>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="mt-3">
                       Configure Advanced Rules
                     </Button>
                   </div>

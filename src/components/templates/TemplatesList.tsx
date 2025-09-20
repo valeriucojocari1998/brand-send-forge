@@ -10,270 +10,246 @@ const categories = [
   {
     id: "operational",
     name: "🚛 Operational Workflows",
-    description: "Load management, dispatch, carrier communications, cancellations",
+    description: "Load status changes, driver notifications, delay alerts, dispatch automation",
     color: "bg-blue-600 text-white",
     templates: [
       {
         id: "1",
-        name: "Load Released",
-        subject: "Load {{LoadID}} Released - Ready for Pickup from {{PickupLocation}}",
+        name: "Load Status Change Notification",
+        subject: "Load {{LoadID}} Status Updated: {{LoadStatus}}",
         category: "operational",
-        description: "Automated notification when load is released and ready for carrier pickup",
+        description: "Triggered when load status changes (Dispatched, Cancelled, Released, etc.)",
         status: "active" as const,
-        lastModified: "2 hours ago",
-        variables: ["LoadID", "CarrierName", "PickupLocation", "PickupDate", "DeliveryLocation", "DeliveryDate", "LoadWeight", "SpecialInstructions"]
+        lastModified: "1 hour ago",
+        variables: ["LoadID", "LoadStatus", "PreviousStatus", "AccountManager", "Dispatcher", "CarrierName", "CustomerName", "CustomerSalesRep"]
       },
       {
         id: "2",
-        name: "Load Cancellation - Carrier",
-        subject: "URGENT: Load {{LoadID}} Cancelled - {{CancellationReason}}",
+        name: "Driver Check-In Notification",
+        subject: "Driver {{DriverName}} Checked In at {{Location}}",
         category: "operational",
-        description: "Automatic notification to carriers when broker cancels a load",
+        description: "Automated notification when driver checks in at pickup/delivery location",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["LoadID", "CarrierName", "CancellationReason", "CancellationTime", "ContactPerson", "ContactPhone", "AlternativeLoads"]
+        lastModified: "2 hours ago",
+        variables: ["LoadID", "DriverName", "CheckInTime", "Location", "LoadStatus", "Dispatcher", "CarrierName"]
       },
       {
         id: "3",
-        name: "Load Cancellation - Broker",
-        subject: "Carrier Cancellation Alert - Load {{LoadID}}",
+        name: "Driver Check-Out Notification",
+        subject: "Driver {{DriverName}} Checked Out from {{Location}}",
         category: "operational",
-        description: "Alert to broker when carrier cancels/bounces off a load",
+        description: "Automated notification when driver checks out from pickup/delivery location",
         status: "active" as const,
-        lastModified: "30 minutes ago",
-        variables: ["LoadID", "CarrierName", "CancellationReason", "TimeToPickup", "ReplacementNeeded", "CustomerImpact"]
+        lastModified: "3 hours ago",
+        variables: ["LoadID", "DriverName", "CheckOutTime", "Location", "LoadStatus", "Dispatcher", "NextDestination"]
       },
       {
         id: "4",
-        name: "Paperwork/BOL Request",
-        subject: "Paperwork Required - Load {{LoadID}} Documentation",
+        name: "Delay Alert (Advanced Automation)",
+        subject: "DELAY ALERT: Load {{LoadID}} - {{DelayReason}}",
         category: "operational",
-        description: "Auto-populated carrier email for requesting Bills of Lading and paperwork",
-        status: "active" as const,
-        lastModified: "3 hours ago",
-        variables: ["LoadID", "CarrierEmail", "RequiredDocs", "DueDate", "SubmissionMethod", "ContactPerson"]
+        description: "Advanced automation triggered based on load status and delay conditions",
+        status: "draft" as const,
+        lastModified: "1 day ago",
+        variables: ["LoadID", "DelayReason", "EstimatedDelay", "NewETA", "AccountManager", "CustomerSalesRep", "LoadStatus"]
       },
       {
         id: "5",
-        name: "Driver Check-In/Out",
-        subject: "Driver {{DriverName}} - {{CheckType}} at {{Location}}",
+        name: "Load Assignment Notification",
+        subject: "New Load Assignment - {{LoadID}} for {{DriverName}}",
         category: "operational",
-        description: "Real-time notifications for driver location updates and status changes",
+        description: "Notification sent when load is assigned to carrier/driver",
         status: "active" as const,
-        lastModified: "45 minutes ago",
-        variables: ["DriverName", "CheckType", "Location", "Timestamp", "LoadID", "NextStop", "ETA"]
-      },
-      {
-        id: "6",
-        name: "Dispatch Assignment",
-        subject: "New Load Assignment - {{LoadID}} | Priority: {{Priority}}",
-        category: "operational",
-        description: "Automated dispatch notifications with load details and routing",
-        status: "active" as const,
-        lastModified: "2 hours ago",
-        variables: ["LoadID", "DriverName", "Priority", "PickupAddress", "DeliveryAddress", "Miles", "Rate", "SpecialRequirements"]
+        lastModified: "2 days ago",
+        variables: ["LoadID", "CarrierName", "DriverName", "PickupLocation", "DeliveryLocation", "Dispatcher", "Rate"]
       }
     ]
   },
   {
     id: "financial",
     name: "💰 Financial & Settlements",
-    description: "Invoicing, payments, detention, factoring, settlements",
+    description: "Driver payments, carrier settlements, quick pay, accounting notifications",
     color: "bg-green-600 text-white",
     templates: [
+      // Driver Payments
+      {
+        id: "6",
+        name: "Driver Statement Email",
+        subject: "Driver Statement - {{StatementPeriod}} | {{DriverName}}",
+        category: "financial",
+        description: "Weekly/monthly statement for driver payments and settlements",
+        status: "active" as const,
+        lastModified: "3 hours ago",
+        variables: ["DriverName", "StatementPeriod", "TotalEarnings", "TotalMiles", "PaymentDate", "StatementID", "CarrierName"]
+      },
       {
         id: "7",
-        name: "Custom Invoice Template",
-        subject: "Invoice {{InvoiceID}} - {{CustomerName}} | Due: {{DueDate}}",
+        name: "Quick Pay Notification",
+        subject: "Quick Pay Processed - ${{Amount}} | {{LoadID}}",
         category: "financial",
-        description: "Customizable invoice emails with customer-specific branding and content",
+        description: "Notification for expedited payment processing",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["InvoiceID", "CustomerName", "InvoiceAmount", "DueDate", "ServicePeriod", "PaymentTerms", "RemittanceAddress"]
+        lastModified: "1 day ago",
+        variables: ["DriverName", "Amount", "LoadID", "PaymentDate", "TransactionID", "AccountManager", "Fee"]
       },
       {
         id: "8",
-        name: "Factoring Company Invoice",
-        subject: "{{CustomerName}} - Invoice {{InvoiceID}} for Factoring Review",
+        name: "Payroll Generated Notification",
+        subject: "Payroll Ready - {{PayPeriod}} | {{EmployeeName}}",
         category: "financial",
-        description: "Specialized invoice format for factoring companies with customer name in subject",
+        description: "Notification when payroll has been processed",
         status: "active" as const,
-        lastModified: "30 minutes ago",
-        variables: ["CustomerName", "InvoiceID", "LoadID", "InvoiceAmount", "CarrierName", "ServiceDate", "FactoringReference"]
+        lastModified: "2 days ago",
+        variables: ["EmployeeName", "PayPeriod", "GrossAmount", "NetAmount", "PayDate", "PayrollID", "Department"]
       },
+      // Carrier Payments
       {
         id: "9",
-        name: "Detention Notice",
-        subject: "Detention Charges Applied - Load {{LoadID}} | ${{Amount}}",
+        name: "Carrier Statement Email",
+        subject: "Settlement Statement - {{StatementPeriod}} | {{CarrierName}}",
         category: "financial",
-        description: "Automated detention charge notifications with detailed breakdown",
+        description: "Settlement statement for carrier payments",
         status: "active" as const,
-        lastModified: "2 hours ago",
-        variables: ["LoadID", "CarrierName", "DetentionHours", "Amount", "Rate", "Location", "StartTime", "EndTime"]
+        lastModified: "4 hours ago",
+        variables: ["CarrierName", "StatementPeriod", "TotalAmount", "PaymentTerms", "DueDate", "InvoiceID", "AccountManager"]
       },
       {
         id: "10",
-        name: "Quick Pay Confirmation",
-        subject: "Quick Pay Processed - ${{Amount}} | Ref: {{TransactionID}}",
+        name: "Accounting Notification",
+        subject: "Financial Transaction Alert - {{TransactionType}} | {{LoadID}}",
         category: "financial",
-        description: "Instant payment confirmations with transaction details",
+        description: "Financial transaction and accounting notifications",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["Amount", "TransactionID", "LoadID", "ProcessedDate", "CarrierName", "Fee", "NetAmount"]
-      },
-      {
-        id: "11",
-        name: "Settlement Statement",
-        subject: "Weekly Settlement - {{WeekEnding}} | Total: ${{TotalAmount}}",
-        category: "financial",
-        description: "Comprehensive weekly settlement statements for carriers",
-        status: "active" as const,
-        lastModified: "4 hours ago",
-        variables: ["WeekEnding", "TotalAmount", "TotalLoads", "TotalMiles", "FuelCharges", "Deductions", "NetPay"]
+        lastModified: "1 day ago",
+        variables: ["TransactionType", "Amount", "LoadID", "CarrierName", "TransactionDate", "AccountManager", "CustomerName"]
       }
     ]
   },
   {
     id: "marketplace",
     name: "🏪 Marketplace",
-    description: "Load postings, broker communications, rate confirmations",
+    description: "Bidding workflow, load postings, carrier communications",
     color: "bg-purple-600 text-white",
     templates: [
       {
-        id: "12",
-        name: "Rate Confirmation",
-        subject: "Rate Confirmation - Load {{LoadID}} | ${{Rate}}",
+        id: "11",
+        name: "Marketplace Bid Received",
+        subject: "New Bid Received - Load {{LoadID}} | ${{BidAmount}}",
         category: "marketplace",
-        description: "Automated rate confirmations with multiple CC recipients support",
+        description: "Notification when a new bid is received on marketplace load",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["LoadID", "Rate", "PickupDate", "DeliveryDate", "CarrierName", "Miles", "RatePerMile", "FuelSurcharge"]
+        lastModified: "2 hours ago",
+        variables: ["LoadID", "CarrierName", "BidAmount", "PickupDate", "CustomerSalesRep", "BidID", "Rate"]
+      },
+      {
+        id: "12",
+        name: "Marketplace Bid Accepted",
+        subject: "Bid Accepted - Load {{LoadID}} | {{CarrierName}}",
+        category: "marketplace",
+        description: "Notification when carrier bid is accepted",
+        status: "active" as const,
+        lastModified: "3 hours ago",
+        variables: ["LoadID", "CarrierName", "AcceptedAmount", "CustomerName", "CustomerSalesRep", "BidID", "SalesManager"]
       },
       {
         id: "13",
-        name: "Load Posting Alert",
-        subject: "New Load Available - {{Origin}} to {{Destination}} | ${{Rate}}",
+        name: "Marketplace Bid Rejected",
+        subject: "Bid Not Selected - Load {{LoadID}}",
         category: "marketplace",
-        description: "Automated alerts for new load postings matching carrier preferences",
+        description: "Notification when carrier bid is rejected",
         status: "active" as const,
-        lastModified: "30 minutes ago",
-        variables: ["Origin", "Destination", "Rate", "PickupDate", "LoadType", "Weight", "Equipment", "Miles"]
+        lastModified: "1 day ago",
+        variables: ["LoadID", "CarrierName", "BidAmount", "RejectionReason", "CustomerSalesRep", "BidID", "AlternativeLoads"]
       },
       {
         id: "14",
-        name: "Carrier Packet Complete",
-        subject: "Carrier Packet Completed - {{CarrierName}}",
+        name: "Marketplace Bid Updated",
+        subject: "Bid Updated - Load {{LoadID}} | New Amount: ${{NewBidAmount}}",
         category: "marketplace",
-        description: "Notification when carrier completes onboarding packet with configurable recipient",
+        description: "Notification when bid details are modified",
         status: "active" as const,
-        lastModified: "2 hours ago",
-        variables: ["CarrierName", "CompletionDate", "PacketType", "NextSteps", "ContactPerson", "AuthorityNumber"]
-      },
-      {
-        id: "15",
-        name: "Broker Communication",
-        subject: "Load Update - {{LoadID}} | {{MessageType}}",
-        category: "marketplace",
-        description: "Pre-populated broker emails for PODs, lumper receipts, and documentation",
-        status: "active" as const,
-        lastModified: "45 minutes ago",
-        variables: ["LoadID", "MessageType", "BrokerName", "AttachmentType", "LoadStatus", "Notes", "RequiredAction"]
+        lastModified: "2 days ago",
+        variables: ["LoadID", "CarrierName", "NewBidAmount", "PreviousBidAmount", "CustomerSalesRep", "BidID", "UpdateReason"]
       }
     ]
   },
   {
     id: "onboarding",
     name: "👨‍💼 Onboarding",
-    description: "New carrier setup, document collection, compliance verification",
+    description: "Carrier & employee onboarding, documentation, compliance verification",
     color: "bg-orange-600 text-white",
     templates: [
+      // Carrier Onboarding
+      {
+        id: "15",
+        name: "Carrier Onboarding Packet",
+        subject: "Welcome {{CarrierName}} - Onboarding Started",
+        category: "onboarding",
+        description: "Welcome packet with required documents and next steps",
+        status: "active" as const,
+        lastModified: "1 week ago",
+        variables: ["CarrierName", "ContactPerson", "AccountManager", "OnboardingLink", "RequiredDocuments", "CompanyName"]
+      },
       {
         id: "16",
-        name: "Welcome New Carrier",
-        subject: "Welcome to {{CompanyName}} - Carrier Onboarding Started",
+        name: "MC Verification Email",
+        subject: "MC Authority Verification - {{CarrierName}} | {{MCNumber}}",
         category: "onboarding",
-        description: "Welcome email for new carriers with onboarding checklist and requirements",
+        description: "Motor carrier authority verification notification",
         status: "active" as const,
-        lastModified: "3 hours ago",
-        variables: ["CarrierName", "CompanyName", "OnboardingLink", "RequiredDocs", "ContactPerson", "Deadline"]
+        lastModified: "3 days ago",
+        variables: ["CarrierName", "MCNumber", "VerificationStatus", "ExpirationDate", "ComplianceManager", "AuthorityNumber"]
       },
       {
         id: "17",
-        name: "Document Reminder",
-        subject: "Action Required - Missing Documents for {{CarrierName}}",
+        name: "Collaboration Invite",
+        subject: "Invitation to Join {{CompanyName}} Network",
         category: "onboarding",
-        description: "Automated reminders for missing carrier documentation and compliance items",
+        description: "Invitation to join carrier collaboration platform",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["CarrierName", "MissingDocs", "DueDate", "ConsequenceText", "UploadLink", "ContactInfo"]
+        lastModified: "5 days ago",
+        variables: ["CarrierName", "InvitationLink", "PlatformFeatures", "SupportContact", "AccountManager", "CompanyName"]
       },
+      // Employee Onboarding
       {
         id: "18",
-        name: "Insurance Expiration",
-        subject: "URGENT: Insurance Expiring Soon - {{CarrierName}}",
+        name: "Account Created Notification",
+        subject: "Welcome {{EmployeeName}} - Account Created",
         category: "onboarding",
-        description: "Proactive alerts for expiring insurance and compliance documents",
+        description: "New employee account creation confirmation",
         status: "active" as const,
-        lastModified: "2 hours ago",
-        variables: ["CarrierName", "DocumentType", "ExpirationDate", "DaysRemaining", "RenewalInstructions", "SuspensionWarning"]
+        lastModified: "1 week ago",
+        variables: ["EmployeeName", "Username", "TempPassword", "LoginURL", "HRManager", "Department", "CompanyName"]
       },
       {
         id: "19",
-        name: "Onboarding Complete",
-        subject: "Congratulations! {{CarrierName}} Onboarding Complete",
+        name: "Email Invitation Link",
+        subject: "Setup Your Account - {{EmployeeName}}",
         category: "onboarding",
-        description: "Confirmation email when carrier completes full onboarding process",
+        description: "Invitation link for new employee setup",
         status: "active" as const,
-        lastModified: "4 hours ago",
-        variables: ["CarrierName", "CompletionDate", "CarrierID", "NextSteps", "AccountManager", "FirstLoadOpportunity"]
+        lastModified: "4 days ago",
+        variables: ["EmployeeName", "InvitationLink", "ExpirationDate", "HRManager", "CompanyName", "Department"]
       },
       {
         id: "20",
-        name: "Driver Qualification",
-        subject: "Driver {{DriverName}} - Qualification Status Update",
+        name: "Email Confirmation Code",
+        subject: "Verify Your Email - Code: {{ConfirmationCode}}",
         category: "onboarding",
-        description: "Driver-specific qualification and document verification notifications",
+        description: "Email verification code for account activation",
         status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["DriverName", "QualificationStatus", "CarrierName", "RequiredTraining", "CertificationDate", "NextReview"]
-      }
-    ]
-  },
-  {
-    id: "notifications",
-    name: "📧 System Notifications",
-    description: "Paystubs, SMS alerts, system updates, compliance notifications",
-    color: "bg-indigo-600 text-white",
-    templates: [
+        lastModified: "6 days ago",
+        variables: ["EmployeeName", "ConfirmationCode", "ExpirationTime", "SupportEmail", "SecurityNotice", "CompanyName"]
+      },
       {
         id: "21",
-        name: "Paystub Available",
-        subject: "Paystub Ready - {{PayPeriod}} | {{EmployeeName}}",
-        category: "notifications",
-        description: "Customizable paystub notifications with employee-specific details",
+        name: "IFTA Standalone Invite",
+        subject: "IFTA Compliance Setup - {{DriverName}}",
+        category: "onboarding",
+        description: "Invitation to IFTA compliance system",
         status: "active" as const,
-        lastModified: "2 days ago",
-        variables: ["PayPeriod", "EmployeeName", "GrossPay", "NetPay", "PayDate", "DirectDepositAccount", "StubLink"]
-      },
-      {
-        id: "22",
-        name: "SMS Message Alert",
-        subject: "New SMS Message from {{SenderName}} - {{Preview}}",
-        category: "notifications",
-        description: "Email notifications for inbound SMS messages with disable option",
-        status: "active" as const,
-        lastModified: "1 hour ago",
-        variables: ["SenderName", "SenderPhone", "Preview", "FullMessage", "ReceivedTime", "LoadReference"]
-      },
-      {
-        id: "23",
-        name: "Trip Report",
-        subject: "Trip Report - {{TripID}} Completed | {{DriverName}}",
-        category: "notifications",
-        description: "Automated trip completion reports with fuel and performance metrics",
-        status: "active" as const,
-        lastModified: "6 hours ago",
-        variables: ["TripID", "DriverName", "Distance", "Duration", "FuelUsed", "MPG", "StartLocation", "EndLocation"]
+        lastModified: "1 week ago",
+        variables: ["DriverName", "IFTAAccountID", "LoginCredentials", "ComplianceDeadline", "ComplianceManager", "CarrierName"]
       }
     ]
   }
