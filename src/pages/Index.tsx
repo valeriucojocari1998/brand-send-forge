@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TemplatesList } from "@/components/templates/TemplatesList";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { BrandingSettings } from "@/components/branding/BrandingSettings";
-import { TestingPanel } from "@/components/testing/TestingPanel";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Mail, Shield, TestTube } from "lucide-react";
 
@@ -53,8 +53,6 @@ const Index = () => {
         );
       case "branding":
         return <BrandingSettings />;
-      case "testing":
-        return <TestingPanel />;
       case "settings":
         return (
           <div className="space-y-6">

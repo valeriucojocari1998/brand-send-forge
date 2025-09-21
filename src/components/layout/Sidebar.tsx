@@ -19,18 +19,6 @@ const navigation = [
     name: "Domain & Branding",
     icon: Building,
     description: "Configure domains and brand assets"
-  },
-  {
-    id: "testing",
-    name: "Test & Preview",
-    icon: TestTube,
-    description: "Test templates and preview emails"
-  },
-  {
-    id: "settings",
-    name: "Settings",
-    icon: Settings,
-    description: "General email settings"
   }
 ];
 

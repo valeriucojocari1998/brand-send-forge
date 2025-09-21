@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Send, Eye, Copy, Settings, Plus, X } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { VariableTooltip } from "@/components/ui/variable-tooltip";
+import { ArrowLeft, Save, Send, Eye, Copy, Settings, Plus, X, Paperclip, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TemplateEditorProps {
@@ -19,14 +21,11 @@ interface TemplateEditorProps {
 }
 
 const variableCategories = {
-  load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions", "LoadStatus", "PreviousStatus"],
-  statuses: ["Dispatched", "Cancelled", "Released", "InTransit", "Delivered", "Pending", "OnHold", "Completed"],
-  roles: ["AccountManager", "CustomerSalesRep", "SalesManager", "Dispatcher", "CustomerSalesAgent", "Carrier", "Customer", "Driver", "ComplianceManager", "HRManager"],
-  carrier: ["CarrierName", "DriverName", "CarrierEmail", "ContactPhone", "AuthorityNumber", "MCNumber"],
-  customer: ["CustomerName", "CustomerEmail", "CustomerSalesRep", "CustomerSalesAgent"],
-  financial: ["InvoiceID", "Amount", "Rate", "DueDate", "PaymentTerms", "TransactionID", "StatementPeriod", "PaymentDate"],
-  company: ["CompanyName", "ContactPerson", "AccountManager", "BrokerName", "SupportContact"],
-  system: ["Timestamp", "SystemDate", "UserName", "CheckInTime", "CheckOutTime", "Location"]
+  load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions", "LoadStatus", "PreviousStatus", "OrderNumber", "PONumber", "TotalBillable", "CarrierTotalPayable", "SalesManager", "AccountManager", "CustomerServiceRep", "Dispatcher"],
+  statuses: ["Dispatched", "Cancelled", "Released", "InTransit", "Delivered", "Invoiced", "Completed"],
+  carrier: ["CarrierName", "CarrierEmail", "CarrierMC", "DriverName", "DriverEmails"],
+  customer: ["Customer/Broker3PL"],
+  financial: ["InvoiceId", "PaymentTerms", "InvoiceDueDate"]
 };
 
 export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorProps) {
@@ -39,61 +38,31 @@ export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorPro
     replyTo: "dispatch@company.com",
     ccAddresses: ["operations@company.com"],
     bccAddresses: [],
-    priority: "normal",
-    trackOpens: true,
-    trackClicks: true,
-    htmlBody: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">Load Released</h1>
-  </div>
-  
-  <div style="padding: 30px; background: #ffffff;">
-    <p>Dear {{CarrierName}},</p>
-    
-    <p>Load <strong>{{LoadID}}</strong> has been released and is ready for pickup.</p>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin-top: 0; color: #1e40af;">Load Details</h3>
-      <p><strong>Pickup:</strong> {{PickupLocation}} on {{PickupDate}}</p>
-      <p><strong>Delivery:</strong> {{DeliveryLocation}} on {{DeliveryDate}}</p>
-      <p><strong>Weight:</strong> {{LoadWeight}} lbs</p>
-      {{#if SpecialInstructions}}
-      <p><strong>Special Instructions:</strong> {{SpecialInstructions}}</p>
-      {{/if}}
-    </div>
-    
-    <p>Please confirm receipt and provide your ETA for pickup.</p>
-    
-    <p>Questions? Contact us at {{ContactPhone}} or reply to this email.</p>
-    
-    <p>Best regards,<br>
-    {{CompanyName}} Dispatch Team</p>
-  </div>
-</div>`,
-    textBody: `Dear {{CarrierName}},
+    emailBody: `<p>Dear {{CarrierName}},</p>
 
-Load {{LoadID}} has been released and is ready for pickup.
+<p>Load <strong>{{LoadID}}</strong> has been released and is ready for pickup.</p>
 
-LOAD DETAILS:
-- Pickup: {{PickupLocation}} on {{PickupDate}}
-- Delivery: {{DeliveryLocation}} on {{DeliveryDate}}
-- Weight: {{LoadWeight}} lbs
-{{#if SpecialInstructions}}
-- Special Instructions: {{SpecialInstructions}}
-{{/if}}
+<h3>Load Details</h3>
+<ul>
+<li><strong>Pickup:</strong> {{PickupLocation}} on {{PickupDate}}</li>
+<li><strong>Delivery:</strong> {{DeliveryLocation}} on {{DeliveryDate}}</li>
+<li><strong>Weight:</strong> {{LoadWeight}} lbs</li>
+</ul>
 
-Please confirm receipt and provide your ETA for pickup.
+<p>Please confirm receipt and provide your ETA for pickup.</p>
 
-Questions? Contact us at {{ContactPhone}} or reply to this email.
+<p>Questions? Contact us or reply to this email.</p>
 
-Best regards,
-{{CompanyName}} Dispatch Team`,
-    variables: ["LoadID", "CarrierName", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "LoadWeight", "SpecialInstructions", "ContactPhone", "CompanyName"]
+<p>Best regards,<br>
+Dispatch Team</p>`,
+    attachedDocuments: [],
+    variables: ["LoadID", "CarrierName", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "LoadWeight", "SpecialInstructions"]
   });
 
   const [activeTab, setActiveTab] = useState("content");
   const [newCcEmail, setNewCcEmail] = useState("");
   const [newBccEmail, setNewBccEmail] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const addEmailAddress = (type: 'cc' | 'bcc', email: string) => {
     if (email && email.includes('@')) {
@@ -113,7 +82,7 @@ Best regards,
     }));
   };
 
-  const insertVariable = (variable: string, targetField: 'subject' | 'htmlBody' | 'textBody') => {
+  const insertVariable = (variable: string, targetField: 'subject' | 'emailBody') => {
     const variableTag = `{{${variable}}}`;
     setTemplate(prev => ({
       ...prev,
@@ -122,7 +91,7 @@ Best regards,
   };
 
   const handlePreview = () => {
-    console.log("Preview template with sample data");
+    setShowPreview(!showPreview);
   };
 
   const handleTest = () => {
@@ -148,10 +117,6 @@ Best regards,
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePreview}>
-            <Eye className="w-4 h-4 mr-2" />
-            Preview
-          </Button>
           <Button variant="outline" onClick={handleTest}>
             <Send className="w-4 h-4 mr-2" />
             Send Test
@@ -167,9 +132,8 @@ Best regards,
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="routing">Email Routing</TabsTrigger>
               <TabsTrigger value="automation">Automation</TabsTrigger>
             </TabsList>
@@ -227,83 +191,43 @@ Best regards,
                   </div>
 
                   <div>
-                    <Label htmlFor="htmlBody">HTML Email Body</Label>
+                    <Label htmlFor="description">Description</Label>
                     <Textarea
-                      id="htmlBody"
-                      value={template.htmlBody}
-                      onChange={(e) => setTemplate(prev => ({ ...prev, htmlBody: e.target.value }))}
-                      rows={12}
-                      className="font-mono text-sm"
+                      id="description"
+                      value={template.description}
+                      onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
+                      rows={2}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="textBody">Plain Text Version</Label>
-                    <Textarea
-                      id="textBody"
-                      value={template.textBody}
-                      onChange={(e) => setTemplate(prev => ({ ...prev, textBody: e.target.value }))}
-                      rows={8}
-                      className="font-mono text-sm"
+                    <Label htmlFor="emailBody">Email Body</Label>
+                    <RichTextEditor
+                      content={template.emailBody}
+                      onChange={(content) => setTemplate(prev => ({ ...prev, emailBody: content }))}
+                      placeholder="Enter your email content..."
                     />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Email Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select value={template.priority} onValueChange={(value) => setTemplate(prev => ({ ...prev, priority: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Tracking Options</h4>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="trackOpens">Track Email Opens</Label>
-                      <Switch
-                        id="trackOpens"
-                        checked={template.trackOpens}
-                        onCheckedChange={(checked) => setTemplate(prev => ({ ...prev, trackOpens: checked }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="trackClicks">Track Link Clicks</Label>
-                      <Switch
-                        id="trackClicks"
-                        checked={template.trackClicks}
-                        onCheckedChange={(checked) => setTemplate(prev => ({ ...prev, trackClicks: checked }))}
-                      />
+                  <div>
+                    <Label>Attached Documents</Label>
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                      <Paperclip className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Drag and drop documents or click to browse</p>
+                      <Button variant="outline" size="sm" className="mt-2">
+                        Add Documents
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
 
             <TabsContent value="routing" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Email Routing Configuration</CardTitle>
-                  <p className="text-sm text-muted-foreground">Configure sender and recipient settings</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -313,9 +237,8 @@ Best regards,
                         id="fromAddress"
                         value={template.fromAddress}
                         onChange={(e) => setTemplate(prev => ({ ...prev, fromAddress: e.target.value }))}
-                        placeholder="dispatch@company.com or {{CompanyEmail}}"
+                        placeholder="dispatch@company.com or {{CarrierEmail}}"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Use variables like {"{"}{"{"}{"}"}CompanyEmail{"}"}{"}"} for dynamic addresses</p>
                     </div>
                     <div>
                       <Label htmlFor="replyTo">Reply-To Address</Label>
@@ -323,9 +246,8 @@ Best regards,
                         id="replyTo"
                         value={template.replyTo}
                         onChange={(e) => setTemplate(prev => ({ ...prev, replyTo: e.target.value }))}
-                        placeholder="support@company.com or {{AccountManagerEmail}}"
+                        placeholder="support@company.com or {{CarrierEmail}}"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Supports dynamic variables for role-based routing</p>
                     </div>
                   </div>
 
@@ -439,27 +361,13 @@ Best regards,
                   </div>
                   
                   <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <h4 className="font-medium mb-2">Advanced Automation Rules</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Set up complex triggers with multiple conditions, delays, and conditional logic.
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Switch id="delay-conditions" />
-                        <Label htmlFor="delay-conditions" className="text-sm">Enable delay-based conditions</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="conditional-logic" />
-                        <Label htmlFor="conditional-logic" className="text-sm">Enable conditional logic (IF/THEN)</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="multi-step" />
-                        <Label htmlFor="multi-step" className="text-sm">Enable multi-step workflows</Label>
-                      </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-blue-600" />
+                      <h4 className="font-medium">Advanced Automation Rules</h4>
                     </div>
-                    <Button variant="outline" size="sm" className="mt-3">
-                      Configure Advanced Rules
-                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Coming soon - Available only for Premium Plan subscribers
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -467,12 +375,47 @@ Best regards,
           </Tabs>
         </div>
 
-        {/* Variables Sidebar */}
-        <div>
+        {/* Variables Sidebar + Preview */}
+        <div className="space-y-6">
+          {showPreview && (
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Email Preview
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowPreview(false)}
+                  className="w-full"
+                >
+                  Hide Preview
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Subject:</strong> {template.subject}</div>
+                  <div className="border rounded p-3 bg-muted/20" dangerouslySetInnerHTML={{ __html: template.emailBody }} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
           <Card className="sticky top-6">
             <CardHeader>
               <CardTitle className="text-sm">Available Variables</CardTitle>
-              <p className="text-xs text-muted-foreground">Click to insert into template</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  {showPreview ? 'Hide' : 'Show'} Preview
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(variableCategories).map(([category, variables]) => (
@@ -480,16 +423,18 @@ Best regards,
                   <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">{category}</h4>
                   <div className="space-y-1">
                     {variables.map((variable) => (
-                      <button
-                        key={variable}
-                        onClick={() => insertVariable(variable, 'htmlBody')}
-                        className={cn(
-                          "w-full text-left px-2 py-1 text-xs rounded hover:bg-accent hover:text-accent-foreground",
-                          "transition-colors duration-200"
-                        )}
-                      >
-                        {`{{${variable}}}`}
-                      </button>
+                      <VariableTooltip variable={variable}>
+                        <button
+                          key={variable}
+                          onClick={() => insertVariable(variable, 'emailBody')}
+                          className={cn(
+                            "w-full text-left px-2 py-1 text-xs rounded hover:bg-accent hover:text-accent-foreground",
+                            "transition-colors duration-200"
+                          )}
+                        >
+                          {`{{${variable}}}`}
+                        </button>
+                      </VariableTooltip>
                     ))}
                   </div>
                 </div>

@@ -276,6 +276,14 @@ export function TemplatesList({ onEditTemplate, onCreateTemplate }: TemplatesLis
     console.log("Duplicate template:", id);
   };
 
+  const handleToggleStatus = (id: string) => {
+    console.log("Toggle status for template:", id);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log("Delete template:", id);
+  };
+
   const filteredCategories = categories.filter(category => {
     if (selectedCategory !== "all" && selectedCategory !== category.id) return false;
     
@@ -374,6 +382,8 @@ export function TemplatesList({ onEditTemplate, onCreateTemplate }: TemplatesLis
                       onPreview={handlePreview}
                       onTest={handleTest}
                       onDuplicate={handleDuplicate}
+                      onToggleStatus={handleToggleStatus}
+                      onDelete={handleDelete}
                     />
                   ))}
                 </div>

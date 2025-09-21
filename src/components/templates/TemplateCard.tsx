@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Edit, Eye, TestTube, MoreVertical, Copy } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Edit, Eye, TestTube, MoreVertical, Copy, Power, PowerOff, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TemplateCardProps {
@@ -19,6 +20,8 @@ interface TemplateCardProps {
   onPreview: (id: string) => void;
   onTest: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onToggleStatus?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 const statusConfig = {
@@ -36,7 +39,7 @@ const statusConfig = {
   }
 };
 
-export function TemplateCard({ template, onEdit, onPreview, onTest, onDuplicate }: TemplateCardProps) {
+export function TemplateCard({ template, onEdit, onPreview, onTest, onDuplicate, onToggleStatus, onDelete }: TemplateCardProps) {
   const status = statusConfig[template.status];
 
   return (
@@ -49,13 +52,47 @@ export function TemplateCard({ template, onEdit, onPreview, onTest, onDuplicate 
               {status.label}
             </Badge>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-smooth"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-smooth"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(template.id)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDuplicate(template.id)}>
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleStatus?.(template.id)}>
+                {template.status === "active" ? (
+                  <>
+                    <PowerOff className="w-4 h-4 mr-2" />
+                    Set to Draft
+                  </>
+                ) : (
+                  <>
+                    <Power className="w-4 h-4 mr-2" />
+                    Activate
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => onDelete?.(template.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         <div className="space-y-2">

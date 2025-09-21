@@ -4,13 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, Upload, Globe, Shield, Mail } from "lucide-react";
+import { CheckCircle, AlertCircle, Upload, Globe, Shield, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 export function BrandingSettings() {
-  const [customDomain, setCustomDomain] = useState("mail.yourcompany.com");
-  const [fromAddress, setFromAddress] = useState("notifications@yourcompany.com");
-  const [replyTo, setReplyTo] = useState("support@yourcompany.com");
+  const [domains, setDomains] = useState([
+    { id: 1, domain: "mail.yourcompany.com", status: "verified" as const },
+    { id: 2, domain: "notifications.yourcompany.com", status: "pending" as const }
+  ]);
+  const [newDomain, setNewDomain] = useState("");
+  const [selectedDomain, setSelectedDomain] = useState<number | null>(null);
+  const [showDnsVerification, setShowDnsVerification] = useState(false);
   const [companyName, setCompanyName] = useState("Your Logistics Company");
   const [logoUrl, setLogoUrl] = useState("");
   const [signature, setSignature] = useState("");
@@ -48,6 +52,26 @@ export function BrandingSettings() {
     failed: "bg-destructive/10 text-destructive border-destructive/20"
   };
 
+  const addDomain = () => {
+    if (newDomain && newDomain.includes('.')) {
+      setDomains(prev => [...prev, {
+        id: Date.now(),
+        domain: newDomain,
+        status: "pending" as const
+      }]);
+      setNewDomain("");
+    }
+  };
+
+  const removeDomain = (id: number) => {
+    setDomains(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleVerifyDomain = (domainId: number) => {
+    setSelectedDomain(domainId);
+    setShowDnsVerification(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -56,103 +80,119 @@ export function BrandingSettings() {
         <p className="text-muted-foreground">Configure your domain settings and brand identity</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Domain Configuration */}
+      <div className="space-y-6">
+        {/* Custom Domains */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5" />
-              Domain Configuration
+              Custom Domains
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customDomain">Custom Domain</Label>
+            {/* Add New Domain */}
+            <div className="flex gap-2">
               <Input
-                id="customDomain"
-                value={customDomain}
-                onChange={(e) => setCustomDomain(e.target.value)}
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
                 placeholder="mail.yourcompany.com"
+                className="flex-1"
               />
-              <p className="text-xs text-muted-foreground">
-                The domain used for sending emails
-              </p>
+              <Button onClick={addDomain} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Domain
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fromAddress">Default From Address</Label>
-              <Input
-                id="fromAddress"
-                value={fromAddress}
-                onChange={(e) => setFromAddress(e.target.value)}
-                placeholder="notifications@yourcompany.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="replyTo">Reply-To Address</Label>
-              <Input
-                id="replyTo"
-                value={replyTo}
-                onChange={(e) => setReplyTo(e.target.value)}
-                placeholder="support@yourcompany.com"
-              />
-            </div>
-
-            <Button className="w-full">
-              <Shield className="w-4 h-4 mr-2" />
-              Update Domain Settings
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* DNS Verification */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              DNS Verification
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Add these DNS records to your domain to enable authenticated email delivery.
-            </p>
-
+            {/* Domain List */}
             <div className="space-y-3">
-              {dnsRecords.map((record, index) => (
-                <div key={index} className="p-3 border rounded-lg bg-gradient-card">
-                  <div className="flex items-center justify-between mb-2">
+              {domains.map((domain) => (
+                <div key={domain.id} className="flex items-center justify-between p-3 border rounded-lg bg-gradient-card">
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{record.type}</span>
-                      {statusIcons[record.status]}
+                      {statusIcons[domain.status]}
+                      <span className="font-medium">{domain.domain}</span>
                     </div>
-                    <Badge className={statusColors[record.status]}>
-                      {record.status}
+                    <Badge className={statusColors[domain.status]}>
+                      {domain.status}
                     </Badge>
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex">
-                      <span className="text-muted-foreground w-12">Name:</span>
-                      <code className="bg-muted px-1 rounded">{record.name}</code>
-                    </div>
-                    <div className="flex">
-                      <span className="text-muted-foreground w-12">Value:</span>
-                      <code className="bg-muted px-1 rounded text-xs break-all">
-                        {record.value.length > 40 ? record.value.substring(0, 40) + "..." : record.value}
-                      </code>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleVerifyDomain(domain.id)}
+                    >
+                      Verify
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => removeDomain(domain.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-
-            <Button variant="outline" className="w-full">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Verify DNS Records
-            </Button>
           </CardContent>
         </Card>
+
+        {/* DNS Verification Modal/Panel */}
+        {showDnsVerification && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                DNS Verification
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add these DNS records to your domain to enable authenticated email delivery.
+              </p>
+
+              <div className="space-y-3">
+                {dnsRecords.map((record, index) => (
+                  <div key={index} className="p-3 border rounded-lg bg-gradient-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{record.type}</span>
+                        {statusIcons[record.status]}
+                      </div>
+                      <Badge className={statusColors[record.status]}>
+                        {record.status}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex">
+                        <span className="text-muted-foreground w-12">Name:</span>
+                        <code className="bg-muted px-1 rounded">{record.name}</code>
+                      </div>
+                      <div className="flex">
+                        <span className="text-muted-foreground w-12">Value:</span>
+                        <code className="bg-muted px-1 rounded text-xs break-all">
+                          {record.value.length > 40 ? record.value.substring(0, 40) + "..." : record.value}
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowDnsVerification(false)}>
+                  Close
+                </Button>
+                <Button className="flex-1">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Verify DNS Records
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Brand Assets */}
         <Card className="shadow-card">
@@ -207,50 +247,6 @@ export function BrandingSettings() {
           </CardContent>
         </Card>
 
-        {/* Email Routing */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              Email Routing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Configure CC and BCC addresses for different email types.
-            </p>
-
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Operational Emails</Label>
-                <Input placeholder="dispatch@yourcompany.com" />
-                <p className="text-xs text-muted-foreground">CC for dispatch and load-related emails</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Financial Emails</Label>
-                <Input placeholder="accounting@yourcompany.com" />
-                <p className="text-xs text-muted-foreground">CC for billing and payment emails</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>HR Emails</Label>
-                <Input placeholder="hr@yourcompany.com" />
-                <p className="text-xs text-muted-foreground">CC for employee-related communications</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>BCC All Emails</Label>
-                <Input placeholder="audit@yourcompany.com" />
-                <p className="text-xs text-muted-foreground">Optional: BCC for audit/compliance</p>
-              </div>
-            </div>
-
-            <Button variant="outline" className="w-full">
-              Update Routing Rules
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
