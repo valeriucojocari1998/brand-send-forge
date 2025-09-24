@@ -28,6 +28,24 @@ const variableCategories = {
   financial: ["InvoiceId", "PaymentTerms", "InvoiceDueDate"]
 };
 
+const variableDescriptions: Record<string, { name: string; description: string; example: string }> = {
+  LoadID: { name: "Load ID", description: "The unique load identifier", example: "LD-12345" },
+  OrderNumber: { name: "Order Number", description: "The unique customer order reference", example: "SO-12345" },
+  PONumber: { name: "PO Number", description: "Customer purchase order number", example: "PO-98765" },
+  TotalBillable: { name: "Total Billable", description: "Total amount charged to customer", example: "$2,450.00" },
+  CarrierTotalPayable: { name: "Carrier Total Payable", description: "Total amount paid to carrier", example: "$2,100.00" },
+  SalesManager: { name: "Sales Manager", description: "Sales manager name and contact", example: "John Smith" },
+  AccountManager: { name: "Account Manager", description: "Account manager for this customer", example: "Jane Doe" },
+  CustomerServiceRep: { name: "Customer Service Rep", description: "Assigned customer service representative", example: "Mike Johnson" },
+  Dispatcher: { name: "Dispatcher", description: "Load dispatcher name and contact", example: "Sarah Wilson" },
+  CarrierName: { name: "Carrier Name", description: "The carrier company name", example: "ABC Trucking LLC" },
+  CarrierEmail: { name: "Carrier Email", description: "Primary carrier contact email", example: "dispatch@abctrucking.com" },
+  DriverEmails: { name: "Driver Emails", description: "Driver contact email addresses", example: "driver@abctrucking.com" },
+  InvoiceId: { name: "Invoice ID", description: "Unique invoice identifier", example: "INV-12345" },
+  PaymentTerms: { name: "Payment Terms", description: "Payment terms for invoice", example: "Net 30" },
+  InvoiceDueDate: { name: "Invoice Due Date", description: "Payment due date", example: "2024-03-15" }
+};
+
 export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorProps) {
   const [template, setTemplate] = useState({
     name: "Load Released Notification",
@@ -38,23 +56,21 @@ export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorPro
     replyTo: "dispatch@company.com",
     ccAddresses: ["operations@company.com"],
     bccAddresses: [],
-    emailBody: `<p>Dear {{CarrierName}},</p>
+    emailBody: `Dear {{CarrierName}},
 
-<p>Load <strong>{{LoadID}}</strong> has been released and is ready for pickup.</p>
+Load **{{LoadID}}** has been released and is ready for pickup.
 
-<h3>Load Details</h3>
-<ul>
-<li><strong>Pickup:</strong> {{PickupLocation}} on {{PickupDate}}</li>
-<li><strong>Delivery:</strong> {{DeliveryLocation}} on {{DeliveryDate}}</li>
-<li><strong>Weight:</strong> {{LoadWeight}} lbs</li>
-</ul>
+### Load Details
+- **Pickup:** {{PickupLocation}} on {{PickupDate}}
+- **Delivery:** {{DeliveryLocation}} on {{DeliveryDate}}
+- **Weight:** {{LoadWeight}} lbs
 
-<p>Please confirm receipt and provide your ETA for pickup.</p>
+Please confirm receipt and provide your ETA for pickup.
 
-<p>Questions? Contact us or reply to this email.</p>
+Questions? Contact us or reply to this email.
 
-<p>Best regards,<br>
-Dispatch Team</p>`,
+Best regards,  
+Dispatch Team`,
     attachedDocuments: [],
     variables: ["LoadID", "CarrierName", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "LoadWeight", "SpecialInstructions"]
   });
@@ -117,13 +133,21 @@ Dispatch Team</p>`,
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTest}>
-            <Send className="w-4 h-4 mr-2" />
-            Send Test
-          </Button>
-          <Button onClick={handleSave} className="bg-gradient-primary hover:bg-primary-hover">
+          <Button variant="outline" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
-            Save Template
+            Save Draft
+          </Button>
+          <Button variant="outline" className="text-success border-success hover:bg-success-light">
+            <Badge className="w-4 h-4 mr-2" />
+            Activate Template
+          </Button>
+          <Button variant="outline" onClick={handlePreview}>
+            <Eye className="w-4 h-4 mr-2" />
+            Preview
+          </Button>
+          <Button onClick={handleTest} className="bg-gradient-primary hover:bg-primary-hover">
+            <Send className="w-4 h-4 mr-2" />
+            Test Send
           </Button>
         </div>
       </div>
@@ -131,114 +155,94 @@ Dispatch Team</p>`,
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-3">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="routing">Email Routing</TabsTrigger>
-              <TabsTrigger value="automation">Automation</TabsTrigger>
-            </TabsList>
+          <Card>
+            <CardHeader>
+              <CardTitle>Template Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
 
-            <TabsContent value="content" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Template Content</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              {/* Template Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Template Name</Label>
+                  <Input
+                    id="name"
+                    value={template.name}
+                    onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter template name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={template.category} onValueChange={(value) => setTemplate(prev => ({ ...prev, category: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="operational">🚛 Operational Workflows</SelectItem>
+                      <SelectItem value="financial">💰 Financial & Settlements</SelectItem>
+                      <SelectItem value="marketplace">🏪 Marketplace</SelectItem>
+                      <SelectItem value="onboarding">👨‍💼 Onboarding</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Subject Line */}
+              <div>
+                <Label htmlFor="subject">Subject Line *</Label>
+                <Input
+                  id="subject"
+                  value={template.subject}
+                  onChange={(e) => setTemplate(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Enter email subject with {{variables}}"
+                  className={!template.subject ? "border-destructive" : ""}
+                />
+                {!template.subject && (
+                  <p className="text-xs text-destructive mt-1">Subject line is required</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={template.description}
+                  onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                  placeholder="Brief description of this template"
+                />
+              </div>
+
+              {/* Email Body */}
+              <div>
+                <Label htmlFor="emailBody">Email Body *</Label>
+                <RichTextEditor
+                  content={template.emailBody}
+                  onChange={(content) => setTemplate(prev => ({ ...prev, emailBody: content }))}
+                  placeholder="Enter your email content..."
+                />
+                {!template.emailBody && (
+                  <p className="text-xs text-destructive mt-1">Email body is required</p>
+                )}
+              </div>
+
+              {/* Email Routing Configuration */}
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Email Routing Configuration</h3>
+                <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">Template Name</Label>
-                      <Input
-                        id="name"
-                        value={template.name}
-                        onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="category">Category</Label>
-                      <Select value={template.category} onValueChange={(value) => setTemplate(prev => ({ ...prev, category: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="operational">🚛 Operational Workflows</SelectItem>
-                          <SelectItem value="financial">💰 Financial & Settlements</SelectItem>
-                          <SelectItem value="marketplace">🏪 Marketplace</SelectItem>
-                          <SelectItem value="onboarding">👨‍💼 Onboarding</SelectItem>
-                          <SelectItem value="notifications">📧 System Notifications</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={template.description}
-                      onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="subject">Email Subject</Label>
-                    <Input
-                      id="subject"
-                      value={template.subject}
-                      onChange={(e) => setTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                      placeholder="Enter email subject with {{variables}}"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={template.description}
-                      onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="emailBody">Email Body</Label>
-                    <RichTextEditor
-                      content={template.emailBody}
-                      onChange={(content) => setTemplate(prev => ({ ...prev, emailBody: content }))}
-                      placeholder="Enter your email content..."
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Attached Documents</Label>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Paperclip className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Drag and drop documents or click to browse</p>
-                      <Button variant="outline" size="sm" className="mt-2">
-                        Add Documents
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-
-            <TabsContent value="routing" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Email Routing Configuration</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="fromAddress">From Address</Label>
+                      <Label htmlFor="fromAddress">From Address *</Label>
                       <Input
                         id="fromAddress"
                         value={template.fromAddress}
                         onChange={(e) => setTemplate(prev => ({ ...prev, fromAddress: e.target.value }))}
                         placeholder="dispatch@company.com or {{CarrierEmail}}"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Must be verified domain or email variable</p>
                     </div>
                     <div>
                       <Label htmlFor="replyTo">Reply-To Address</Label>
@@ -257,14 +261,13 @@ Dispatch Team</p>`,
                       <Input
                         value={newCcEmail}
                         onChange={(e) => setNewCcEmail(e.target.value)}
-                        placeholder="email@company.com or {{CarrierEmail}}, {{CustomerEmail}}"
+                        placeholder="email@company.com or {{CarrierEmail}}"
                         onKeyPress={(e) => e.key === 'Enter' && addEmailAddress('cc', newCcEmail)}
                       />
                       <Button size="sm" onClick={() => addEmailAddress('cc', newCcEmail)}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">Supports both static emails and dynamic variables</p>
                     <div className="flex flex-wrap gap-2">
                       {template.ccAddresses.map((email, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -291,7 +294,6 @@ Dispatch Team</p>`,
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">Supports both static emails and dynamic variables</p>
                     <div className="flex flex-wrap gap-2">
                       {template.bccAddresses.map((email, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -304,75 +306,24 @@ Dispatch Team</p>`,
                       ))}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              </div>
 
-            <TabsContent value="automation" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Automation Rules</CardTitle>
-                  <p className="text-sm text-muted-foreground">Configure when and how this template is triggered</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="triggerType">Trigger Type</Label>
-                      <Select defaultValue="load-status-change">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="load-status-change">Load Status Change</SelectItem>
-                          <SelectItem value="driver-checkin">Driver Check-In</SelectItem>
-                          <SelectItem value="driver-checkout">Driver Check-Out</SelectItem>
-                          <SelectItem value="payment-processed">Payment Processed</SelectItem>
-                          <SelectItem value="manual-trigger">Manual Trigger</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="triggerCondition">Trigger Condition</Label>
-                      <Select defaultValue="released">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="dispatched">Status = Dispatched</SelectItem>
-                          <SelectItem value="cancelled">Status = Cancelled</SelectItem>
-                          <SelectItem value="released">Status = Released</SelectItem>
-                          <SelectItem value="in-transit">Status = In Transit</SelectItem>
-                          <SelectItem value="delivered">Status = Delivered</SelectItem>
-                          <SelectItem value="on-hold">Status = On Hold</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+              {/* Attached Documents */}
+              <Separator />
+              <div>
+                <Label>Attached Documents</Label>
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <Paperclip className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Drag and drop documents or click to browse</p>
+                  <Button variant="outline" size="sm" className="mt-2">
+                    Add Documents
+                  </Button>
+                </div>
+              </div>
 
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Current Trigger Configuration</h4>
-                    <p className="text-sm text-muted-foreground">
-                      This template will be automatically sent when <strong>Load Status changes to "Released"</strong> in the system.
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge variant="outline">Load Status Change</Badge>
-                      <Badge variant="outline">Status = Released</Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="w-4 h-4 text-blue-600" />
-                      <h4 className="font-medium">Advanced Automation Rules</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Coming soon - Available only for Premium Plan subscribers
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Variables Sidebar + Preview */}
@@ -418,19 +369,25 @@ Dispatch Team</p>`,
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.entries(variableCategories).map(([category, variables]) => (
+                  {Object.entries(variableCategories).map(([category, variables]) => (
                 <div key={category}>
                   <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">{category}</h4>
                   <div className="space-y-1">
                     {variables.map((variable) => (
-                      <VariableTooltip variable={variable}>
+                      <VariableTooltip 
+                        key={variable}
+                        variable={variable}
+                      >
                         <button
-                          key={variable}
                           onClick={() => insertVariable(variable, 'emailBody')}
                           className={cn(
                             "w-full text-left px-2 py-1 text-xs rounded hover:bg-accent hover:text-accent-foreground",
-                            "transition-colors duration-200"
+                            "transition-colors duration-200 cursor-pointer"
                           )}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', `{{${variable}}}`);
+                          }}
                         >
                           {`{{${variable}}}`}
                         </button>

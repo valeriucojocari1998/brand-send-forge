@@ -19,6 +19,12 @@ const navigation = [
     name: "Domain & Branding",
     icon: Building,
     description: "Configure domains and brand assets"
+  },
+  {
+    id: "automations",
+    name: "Email Automations",
+    icon: Settings,
+    description: "Configure automation rules"
   }
 ];
 

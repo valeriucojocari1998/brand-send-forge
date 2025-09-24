@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TemplatesList } from "@/components/templates/TemplatesList";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { BrandingSettings } from "@/components/branding/BrandingSettings";
+import { EmailAutomations } from "@/components/automations/EmailAutomations";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Mail, Shield, TestTube } from "lucide-react";
@@ -53,6 +54,8 @@ const Index = () => {
         );
       case "branding":
         return <BrandingSettings />;
+      case "automations":
+        return <EmailAutomations />;
       case "settings":
         return (
           <div className="space-y-6">
