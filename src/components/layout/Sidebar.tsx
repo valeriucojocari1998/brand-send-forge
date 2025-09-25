@@ -1,32 +1,11 @@
 import { cn } from "@/lib/utils";
-import { Mail, Settings, FileText, Users, Building, TestTube } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Mail } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
 }
-
-const navigation = [
-  {
-    id: "templates",
-    name: "Email Templates",
-    icon: FileText,
-    description: "Manage all email templates"
-  },
-  {
-    id: "branding",
-    name: "Domain & Branding",
-    icon: Building,
-    description: "Configure domains and brand assets"
-  },
-  {
-    id: "automations",
-    name: "Email Automations",
-    icon: Settings,
-    description: "Configure automation rules"
-  }
-];
 
 export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   return (
@@ -44,37 +23,31 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          
-          return (
-            <Button
-              key={item.id}
-              variant="ghost"
-              onClick={() => onSectionChange(item.id)}
-              className={cn(
-                "w-full justify-start h-auto p-3 text-left",
-                "hover:bg-sidebar-accent/10 transition-smooth",
-                isActive && "bg-sidebar-accent text-white hover:bg-sidebar-accent hover:text-white"
-              )}
+      {/* Tabs Navigation */}
+      <div className="flex-1 p-4">
+        <Tabs value={activeSection} onValueChange={onSectionChange} orientation="vertical" className="w-full">
+          <TabsList className="grid w-full grid-cols-1 h-auto bg-transparent p-0 gap-1">
+            <TabsTrigger 
+              value="templates" 
+              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
             >
-              <Icon className="w-4 h-4 mr-3 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">{item.name}</div>
-                <div className={cn(
-                  "text-xs mt-0.5",
-                  isActive ? "text-white/80" : "text-sidebar-muted"
-                )}>
-                  {item.description}
-                </div>
-              </div>
-            </Button>
-          );
-        })}
-      </nav>
+              Email Templates
+            </TabsTrigger>
+            <TabsTrigger 
+              value="automations" 
+              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
+            >
+              Automation Rules
+            </TabsTrigger>
+            <TabsTrigger 
+              value="branding" 
+              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
+            >
+              Brand Assets
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-border">
