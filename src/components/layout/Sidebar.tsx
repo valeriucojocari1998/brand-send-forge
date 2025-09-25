@@ -1,13 +1,9 @@
 import { cn } from "@/lib/utils";
 import { Mail } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface SidebarProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
-}
+interface SidebarProps {}
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({}: SidebarProps) {
   return (
     <div className="w-64 bg-sidebar border-r border-border flex flex-col">
       {/* Header */}
@@ -23,30 +19,11 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex-1 p-4">
-        <Tabs value={activeSection} onValueChange={onSectionChange} orientation="vertical" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 h-auto bg-transparent p-0 gap-1">
-            <TabsTrigger 
-              value="templates" 
-              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
-            >
-              Email Templates
-            </TabsTrigger>
-            <TabsTrigger 
-              value="automations" 
-              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
-            >
-              Automation Rules
-            </TabsTrigger>
-            <TabsTrigger 
-              value="branding" 
-              className="w-full justify-start text-left p-3 data-[state=active]:bg-sidebar-accent data-[state=active]:text-white"
-            >
-              Brand Assets
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Content */}
+      <div className="flex-1 p-6">
+        <div className="text-sm text-sidebar-muted">
+          Configure email templates, automation rules, and brand assets using the tabs in the main content area.
+        </div>
       </div>
 
       {/* Footer */}

@@ -4,13 +4,14 @@ import { TemplatesListV2 as TemplatesList } from "@/components/templates/Templat
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { BrandingSettings } from "@/components/branding/BrandingSettings";
 import { EmailAutomations } from "@/components/automations/EmailAutomations";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Mail, Shield, TestTube } from "lucide-react";
 import { EmailTemplate } from "@/types/templates";
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState("templates");
+  const [activeTab, setActiveTab] = useState("templates");
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [creatingTemplate, setCreatingTemplate] = useState(false);
 
@@ -33,7 +34,7 @@ const Index = () => {
     setCreatingTemplate(false);
   };
 
-  const renderContent = () => {
+  const renderTabContent = () => {
     // Show template editor if editing or creating
     if (editingTemplate || creatingTemplate) {
       return (
@@ -45,72 +46,39 @@ const Index = () => {
       );
     }
 
-    switch (activeSection) {
-      case "templates":
-        return (
+    return (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="templates">Email Templates</TabsTrigger>
+          <TabsTrigger value="automations">Email Automations</TabsTrigger>
+          <TabsTrigger value="branding">Brand Assets</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="templates" className="mt-6">
           <TemplatesList 
             onEditTemplate={handleEditTemplate}
             onCreateTemplate={handleCreateTemplate}
           />
-        );
-      case "branding":
-        return <BrandingSettings />;
-      case "automations":
-        return <EmailAutomations />;
-      case "settings":
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">General Settings</h2>
-              <p className="text-muted-foreground">Configure global email preferences</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="w-5 h-5" />
-                    Email Preferences
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Global email sending preferences and delivery options.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Security Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Email security and compliance configuration.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+        </TabsContent>
+        
+        <TabsContent value="automations" className="mt-6">
+          <EmailAutomations />
+        </TabsContent>
+        
+        <TabsContent value="branding" className="mt-6">
+          <BrandingSettings />
+        </TabsContent>
+      </Tabs>
+    );
   };
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar 
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-      />
+      <Sidebar />
       
       <main className="flex-1 overflow-auto">
         <div className="p-6 max-w-7xl mx-auto">
-          {renderContent()}
+          {renderTabContent()}
         </div>
       </main>
     </div>
