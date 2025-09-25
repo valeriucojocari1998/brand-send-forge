@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Play, Pause, Edit, Trash2, Zap, Clock, DollarSign, User } from "lucide-react";
+import { Plus, Play, Pause, Edit, Trash2, Zap, DollarSign, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AutomationRule {
@@ -29,38 +29,29 @@ const mockTemplates = [
 
 const triggerTypes = [
   { id: "status-change", label: "Status Change", icon: Zap, description: "When load status changes" },
-  { id: "financial-events", label: "Financial Events", icon: DollarSign, description: "Invoice created, payment due" },
-  { id: "user-actions", label: "User Actions", icon: User, description: "Driver uploads POD, portal login" },
-  { id: "scheduled-events", label: "Scheduled Events", icon: Clock, description: "Daily summaries, weekly digests" }
+  { id: "financial-event", label: "Financial Event", icon: DollarSign, description: "Invoice created, payment due" },
+  { id: "other-events", label: "Other Events", icon: Settings, description: "Driver notifications, POD uploads" }
 ];
 
 const statusChangeConditions = [
-  "Dispatched → Cancelled",
-  "Released → InTransit", 
-  "InTransit → Delivered",
-  "Delivered → Invoiced",
-  "Any status → Cancelled"
+  "Cancelled",
+  "TONU",
+  "Released",
+  "Invoiced"
 ];
 
 const financialConditions = [
-  "Invoice Created",
-  "Payment Due (Net30)",
+  "Invoice Generated",
   "Payment Overdue",
-  "Quick Pay Requested"
+  "Customer Payment Received"
 ];
 
-const userActionConditions = [
-  "Driver uploads POD",
-  "Customer portal login",
-  "Carrier accepts load",
-  "Driver checks in"
-];
-
-const scheduledConditions = [
-  "Daily at 08:00",
-  "Weekly on Monday",
-  "Monthly summary",
-  "End of day report"
+const otherEventsConditions = [
+  "Driver Check-In Notification",
+  "Driver Check-Out Notification",
+  "POD Document Uploaded",
+  "Pickup Delayed by > 6h",
+  "Delivery Delayed by > 6h"
 ];
 
 export function EmailAutomations() {
@@ -76,12 +67,12 @@ export function EmailAutomations() {
     },
     {
       id: "2", 
-      name: "Payment Reminder (Net30)",
+      name: "Payment Reminder",
       template: "payment-reminder",
-      triggerType: "financial-events",
-      condition: "Payment Due (Net30)",
+      triggerType: "financial-event",
+      condition: "Payment Overdue",
       active: true,
-      description: "Send payment reminder 3 days before Net30 due date"
+      description: "Send payment reminder when invoice is overdue"
     }
   ]);
 
@@ -97,12 +88,10 @@ export function EmailAutomations() {
     switch (triggerType) {
       case "status-change":
         return statusChangeConditions;
-      case "financial-events":
+      case "financial-event":
         return financialConditions;
-      case "user-actions":
-        return userActionConditions;
-      case "scheduled-events":
-        return scheduledConditions;
+      case "other-events":
+        return otherEventsConditions;
       default:
         return [];
     }
