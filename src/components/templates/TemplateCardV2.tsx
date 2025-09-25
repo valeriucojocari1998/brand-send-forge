@@ -143,40 +143,32 @@ export function TemplateCardV2({
         )}
       </CardHeader>
       
-      <CardContent className="pt-0 pb-3">
-        <div className="flex items-center gap-1 text-caption font-body4">
-          <Clock className="h-3 w-3" />
-          <span>{formatDate(template.lastModified)}</span>
-          {variables.length > 0 && (
-            <>
-              <span className="mx-2">•</span>
-              <span>
-                +{variables.length} more variables
-              </span>
-            </>
-          )}
-        </div>
-      </CardContent>
       
       <CardFooter className="pt-0 pb-4">
-        <div className="flex w-full gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1 h-8 text-xs font-body4 border-tint text-body hover:bg-hover"
-            onClick={() => onPreview(template)}
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Preview
-          </Button>
-          <Button 
-            size="sm" 
-            className="flex-1 h-8 text-xs font-body4 bg-emphasis hover:bg-emphasis/90 text-white"
-            onClick={() => onEdit(template)}
-          >
-            <Edit className="h-3 w-3 mr-1" />
-            Edit
-          </Button>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-1 text-caption">
+            <Clock className="h-3 w-3" />
+            <span className="text-xs">{formatDate(template.lastModified)}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onPreview(template)}
+              className="h-8 w-8 text-caption hover:text-body hover:bg-hover"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(template)}
+              className="h-8 w-8 text-caption hover:text-emphasis hover:bg-hover"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>

@@ -126,7 +126,7 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
           <h1 className="text-header font-h2">Email Templates</h1>
           <p className="text-body font-body3 mt-1 sr-only">Manage your email templates and automation</p>
         </div>
-        <Button onClick={onCreateTemplate} className="bg-emphasis hover:bg-emphasis/90 text-white font-body3">
+        <Button onClick={onCreateTemplate} className="bg-emphasis hover:bg-emphasis/90 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
@@ -140,7 +140,7 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
             placeholder="Search templates by name, subject or description"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-secondary border-tint text-body font-body3"
+            className="pl-10 bg-secondary border-tint text-body"
           />
         </div>
         
