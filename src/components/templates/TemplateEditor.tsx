@@ -244,15 +244,15 @@ Dispatch Team`,
                       />
                       <p className="text-xs text-muted-foreground mt-1">Must be verified domain or email variable</p>
                     </div>
-                    <div>
-                      <Label htmlFor="replyTo">Reply-To Address</Label>
-                      <Input
-                        id="replyTo"
-                        value={template.replyTo}
-                        onChange={(e) => setTemplate(prev => ({ ...prev, replyTo: e.target.value }))}
-                        placeholder="support@company.com or {{CarrierEmail}}"
-                      />
-                    </div>
+                     <div>
+                       <Label htmlFor="replyTo">To:</Label>
+                       <Input
+                         id="replyTo"
+                         value={template.replyTo}
+                         onChange={(e) => setTemplate(prev => ({ ...prev, replyTo: e.target.value }))}
+                         placeholder="support@company.com or {{CarrierEmail}}"
+                       />
+                     </div>
                   </div>
 
                   <div>

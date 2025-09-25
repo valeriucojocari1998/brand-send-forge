@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TemplateCardV2 } from "./TemplateCardV2";
+import { EmailPreviewModal } from "./EmailPreviewModal";
 import { EmailTemplate, TemplateCategoryType } from "@/types/templates";
 import { Search, Plus, Filter, ChevronDown } from "lucide-react";
 
@@ -86,6 +87,8 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TemplateCategoryType[]>(["operational", "financial", "marketplace", "onboarding"]);
   const [statusFilter, setStatusFilter] = useState<("active" | "draft" | "disabled")[]>(["active", "draft", "disabled"]);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,7 +110,8 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
   };
 
   const handlePreview = (template: EmailTemplate) => {
-    console.log("Preview template:", template.id);
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
   };
 
   const handleTest = (template: EmailTemplate) => {
@@ -307,6 +311,16 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
           ))}
         </div>
       )}
+
+      {/* Email Preview Modal */}
+      <EmailPreviewModal 
+        template={previewTemplate}
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewTemplate(null);
+        }}
+      />
     </div>
   );
 }
