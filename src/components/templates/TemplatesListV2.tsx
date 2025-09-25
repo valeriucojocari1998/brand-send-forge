@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TemplateCardV2 } from "./TemplateCardV2";
 import { EmailTemplate, TemplateCategoryType } from "@/types/templates";
 import { Search, Plus, Filter, ChevronDown } from "lucide-react";
 
 interface TemplatesListV2Props {
-  templates: EmailTemplate[];
+  templates?: EmailTemplate[];
   onCreateTemplate: () => void;
   onEditTemplate: (template: EmailTemplate) => void;
 }
@@ -124,7 +124,7 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-header font-h2">Email Templates</h1>
-          <p className="text-body font-body3 mt-1">Manage your email templates and automation</p>
+          <p className="text-body font-body3 mt-1 sr-only">Manage your email templates and automation</p>
         </div>
         <Button onClick={onCreateTemplate} className="bg-emphasis hover:bg-emphasis/90 text-white font-body3">
           <Plus className="h-4 w-4 mr-2" />
@@ -137,62 +137,138 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
         <div className="flex-1 relative">
           <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-caption" />
           <Input
-            placeholder="Search templates by name, subject, or description"
+            placeholder="Search templates by name, subject or description"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-secondary border-tint text-body font-body3"
           />
         </div>
         
-        <Select 
-          value={categoryFilter.length === 4 ? "all" : categoryFilter.join(",")} 
-          onValueChange={(value) => {
-            if (value === "all") {
-              setCategoryFilter(["operational", "financial", "marketplace", "onboarding"]);
-            } else {
-              const categories = value.split(",").filter(Boolean) as TemplateCategoryType[];
-              setCategoryFilter(categories);
-            }
-          }}
-        >
-          <SelectTrigger className="w-48 bg-secondary border-tint">
-            <div className="flex items-center">
-              <Filter className="h-4 w-4 mr-2 text-caption" />
-              <span className="text-body font-body3">All Categories</span>
-            </div>
-            <ChevronDown className="h-4 w-4 ml-auto text-caption" />
-          </SelectTrigger>
-          <SelectContent className="bg-primary border-tint">
-            <SelectItem value="all" className="text-body font-body3">All Categories</SelectItem>
-            <SelectItem value="operational" className="text-body font-body3">🚛 Operational</SelectItem>
-            <SelectItem value="financial" className="text-body font-body3">💰 Financial</SelectItem>
-            <SelectItem value="marketplace" className="text-body font-body3">🏪 Marketplace</SelectItem>
-            <SelectItem value="onboarding" className="text-body font-body3">👨‍💼 Onboarding</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-48 bg-secondary border-tint justify-between">
+              <div className="flex items-center">
+                <Filter className="h-4 w-4 mr-2 text-caption" />
+                <span className="text-body font-body3">
+                  {categoryFilter.length === 4 ? "All Categories" : `${categoryFilter.length} Categories`}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-caption" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-primary border-tint z-50 w-56">
+            <DropdownMenuCheckboxItem
+              checked={categoryFilter.length === 4}
+              onCheckedChange={(checked) => {
+                setCategoryFilter(
+                  checked ? ["operational", "financial", "marketplace", "onboarding"] : []
+                );
+              }}
+              className="text-body font-body3"
+            >
+              All Categories
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={categoryFilter.includes("operational")}
+              onCheckedChange={(checked) => {
+                setCategoryFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "operational"])) : prev.filter((c) => c !== "operational")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              🚛 Operational
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={categoryFilter.includes("financial")}
+              onCheckedChange={(checked) => {
+                setCategoryFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "financial"])) : prev.filter((c) => c !== "financial")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              💰 Financial
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={categoryFilter.includes("marketplace")}
+              onCheckedChange={(checked) => {
+                setCategoryFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "marketplace"])) : prev.filter((c) => c !== "marketplace")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              🏪 Marketplace
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={categoryFilter.includes("onboarding")}
+              onCheckedChange={(checked) => {
+                setCategoryFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "onboarding"])) : prev.filter((c) => c !== "onboarding")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              👨‍💼 Onboarding
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
-        <Select 
-          value={statusFilter.length === 3 ? "all" : statusFilter.join(",")} 
-          onValueChange={(value) => {
-            if (value === "all") {
-              setStatusFilter(["active", "draft", "disabled"]);
-            } else {
-              const statuses = value.split(",").filter(Boolean) as ("active" | "draft" | "disabled")[];
-              setStatusFilter(statuses);
-            }
-          }}
-        >
-          <SelectTrigger className="w-32 bg-secondary border-tint">
-            <span className="text-body font-body3">All Status</span>
-            <ChevronDown className="h-4 w-4 ml-auto text-caption" />
-          </SelectTrigger>
-          <SelectContent className="bg-primary border-tint">
-            <SelectItem value="all" className="text-body font-body3">All Status</SelectItem>
-            <SelectItem value="active" className="text-body font-body3">Active</SelectItem>
-            <SelectItem value="draft" className="text-body font-body3">Draft</SelectItem>
-            <SelectItem value="disabled" className="text-body font-body3">Disabled</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-32 bg-secondary border-tint justify-between">
+              <span className="text-body font-body3">
+                {statusFilter.length === 3 ? "All Status" : `${statusFilter.length} Status`}
+              </span>
+              <ChevronDown className="h-4 w-4 text-caption" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-primary border-tint z-50 w-48">
+            <DropdownMenuCheckboxItem
+              checked={statusFilter.length === 3}
+              onCheckedChange={(checked) => {
+                setStatusFilter(checked ? ["active", "draft", "disabled"] : []);
+              }}
+              className="text-body font-body3"
+            >
+              All Status
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={statusFilter.includes("active")}
+              onCheckedChange={(checked) => {
+                setStatusFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "active"])) : prev.filter((s) => s !== "active")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              Active
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={statusFilter.includes("draft")}
+              onCheckedChange={(checked) => {
+                setStatusFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "draft"])) : prev.filter((s) => s !== "draft")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              Draft
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={statusFilter.includes("disabled")}
+              onCheckedChange={(checked) => {
+                setStatusFilter((prev) =>
+                  checked ? Array.from(new Set([...prev, "disabled"])) : prev.filter((s) => s !== "disabled")
+                );
+              }}
+              className="text-body font-body3"
+            >
+              Disabled
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Templates Grid */}

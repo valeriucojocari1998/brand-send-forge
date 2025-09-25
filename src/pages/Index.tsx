@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { TemplatesList } from "@/components/templates/TemplatesList";
+import { TemplatesListV2 as TemplatesList } from "@/components/templates/TemplatesListV2";
 import { TemplateEditor } from "@/components/templates/TemplateEditor";
 import { BrandingSettings } from "@/components/branding/BrandingSettings";
 import { EmailAutomations } from "@/components/automations/EmailAutomations";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Mail, Shield, TestTube } from "lucide-react";
+import { EmailTemplate } from "@/types/templates";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("templates");
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [creatingTemplate, setCreatingTemplate] = useState(false);
 
-  const handleEditTemplate = (id: string) => {
-    setEditingTemplate(id);
+  const handleEditTemplate = (template: EmailTemplate) => {
+    setEditingTemplate(template.id);
   };
 
   const handleCreateTemplate = () => {
