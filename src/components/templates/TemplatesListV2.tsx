@@ -84,16 +84,16 @@ const categoryConfig = {
 
 export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, onEditTemplate }: TemplatesListV2Props) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<TemplateCategoryType | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "disabled">("all");
+  const [categoryFilter, setCategoryFilter] = useState<TemplateCategoryType[]>(["operational", "financial", "marketplace", "onboarding"]);
+  const [statusFilter, setStatusFilter] = useState<("active" | "draft" | "disabled")[]>(["active", "draft", "disabled"]);
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          template.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          template.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || template.status === statusFilter;
+    const matchesCategory = categoryFilter.includes(template.category);
+    const matchesStatus = statusFilter.includes(template.status);
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -121,67 +121,84 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-header font-h2">Email Templates</h1>
-          <p className="text-body text-body3 mt-1">Manage your email templates and automation</p>
-        </div>
-        <Button onClick={onCreateTemplate} className="bg-emphasis hover:bg-emphasis/90 text-white font-body3">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Template
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-caption" />
-          <Input
-            placeholder="Search templates by name, subject, or description..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-secondary border-tint text-body font-body3"
-          />
-        </div>
+      <div className="mb-6">
+        <h1 className="text-header font-h2 mb-6">Email Templates</h1>
         
-        <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
-          <SelectTrigger className="w-48 bg-secondary border-tint">
-            <div className="flex items-center">
-              <Filter className="h-4 w-4 mr-2 text-caption" />
+        {/* Search and Filters Row */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 relative">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-caption" />
+            <Input
+              placeholder="Search templates by name, subject, or description"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-secondary border-tint text-body font-body3"
+            />
+          </div>
+          
+          <Select 
+            value={categoryFilter.length === 4 ? "all" : categoryFilter.join(",")} 
+            onValueChange={(value) => {
+              if (value === "all") {
+                setCategoryFilter(["operational", "financial", "marketplace", "onboarding"]);
+              } else {
+                const categories = value.split(",").filter(Boolean) as TemplateCategoryType[];
+                setCategoryFilter(categories);
+              }
+            }}
+          >
+            <SelectTrigger className="w-48 bg-secondary border-tint">
+              <div className="flex items-center">
+                <Filter className="h-4 w-4 mr-2 text-caption" />
+                <span className="text-body font-body3">
+                  {categoryFilter.length === 4 ? "All Categories" : 
+                   categoryFilter.length === 1 ? 
+                     (categoryFilter[0] === "operational" ? "🚛 Operational" :
+                      categoryFilter[0] === "financial" ? "💰 Financial" :
+                      categoryFilter[0] === "marketplace" ? "🏪 Marketplace" :
+                      "👨‍💼 Onboarding") :
+                   `${categoryFilter.length} Categories`}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 ml-auto text-caption" />
+            </SelectTrigger>
+            <SelectContent className="bg-primary border-tint">
+              <SelectItem value="all" className="text-body font-body3">All Categories</SelectItem>
+              <SelectItem value="operational" className="text-body font-body3">🚛 Operational</SelectItem>
+              <SelectItem value="financial" className="text-body font-body3">💰 Financial</SelectItem>
+              <SelectItem value="marketplace" className="text-body font-body3">🏪 Marketplace</SelectItem>
+              <SelectItem value="onboarding" className="text-body font-body3">👨‍💼 Onboarding</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            value={statusFilter.length === 3 ? "all" : statusFilter.join(",")} 
+            onValueChange={(value) => {
+              if (value === "all") {
+                setStatusFilter(["active", "draft", "disabled"]);
+              } else {
+                const statuses = value.split(",").filter(Boolean) as ("active" | "draft" | "disabled")[];
+                setStatusFilter(statuses);
+              }
+            }}
+          >
+            <SelectTrigger className="w-32 bg-secondary border-tint">
               <span className="text-body font-body3">
-                {categoryFilter === "all" ? "All Categories" : 
-                 categoryFilter === "operational" ? "🚛 Operational" :
-                 categoryFilter === "financial" ? "💰 Financial" :
-                 categoryFilter === "marketplace" ? "🏪 Marketplace" :
-                 "👨‍💼 Onboarding"}
+                {statusFilter.length === 3 ? "All Status" : 
+                 statusFilter.length === 1 ? 
+                   statusFilter[0].charAt(0).toUpperCase() + statusFilter[0].slice(1) :
+                 `${statusFilter.length} Status`}
               </span>
-            </div>
-            <ChevronDown className="h-4 w-4 ml-auto text-caption" />
-          </SelectTrigger>
-          <SelectContent className="bg-primary border-tint">
-            <SelectItem value="all" className="text-body font-body3">All Categories</SelectItem>
-            <SelectItem value="operational" className="text-body font-body3">🚛 Operational</SelectItem>
-            <SelectItem value="financial" className="text-body font-body3">💰 Financial</SelectItem>
-            <SelectItem value="marketplace" className="text-body font-body3">🏪 Marketplace</SelectItem>
-            <SelectItem value="onboarding" className="text-body font-body3">👨‍💼 Onboarding</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-          <SelectTrigger className="w-32 bg-secondary border-tint">
-            <span className="text-body font-body3">
-              {statusFilter === "all" ? "All Status" : 
-               statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-            </span>
-            <ChevronDown className="h-4 w-4 ml-auto text-caption" />
-          </SelectTrigger>
-          <SelectContent className="bg-primary border-tint">
-            <SelectItem value="all" className="text-body font-body3">All Status</SelectItem>
-            <SelectItem value="active" className="text-body font-body3">Active</SelectItem>
-            <SelectItem value="draft" className="text-body font-body3">Draft</SelectItem>
-            <SelectItem value="disabled" className="text-body font-body3">Disabled</SelectItem>
-          </SelectContent>
-        </Select>
+              <ChevronDown className="h-4 w-4 ml-auto text-caption" />
+            </SelectTrigger>
+            <SelectContent className="bg-primary border-tint">
+              <SelectItem value="all" className="text-body font-body3">All Status</SelectItem>
+              <SelectItem value="active" className="text-body font-body3">Active</SelectItem>
+              <SelectItem value="draft" className="text-body font-body3">Draft</SelectItem>
+              <SelectItem value="disabled" className="text-body font-body3">Disabled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Templates Grid */}
@@ -192,12 +209,12 @@ export function TemplatesListV2({ templates = mockTemplates, onCreateTemplate, o
           </div>
           <h3 className="text-header font-h5 mb-2">No templates found</h3>
           <p className="text-body font-body3 mb-4">
-            {searchQuery || categoryFilter !== "all" || statusFilter !== "all" 
+            {searchQuery || categoryFilter.length < 4 || statusFilter.length < 3
               ? "Try adjusting your filters" 
               : "Get started by creating your first email template"
             }
           </p>
-          {!searchQuery && categoryFilter === "all" && statusFilter === "all" && (
+          {!searchQuery && categoryFilter.length === 4 && statusFilter.length === 3 && (
             <Button onClick={onCreateTemplate} className="bg-emphasis hover:bg-emphasis/90 text-white font-body3">
               <Plus className="h-4 w-4 mr-2" />
               Create First Template

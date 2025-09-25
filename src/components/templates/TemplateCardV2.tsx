@@ -72,13 +72,14 @@ export function TemplateCardV2({
   return (
     <Card className="bg-primary border-tint hover:border-selected transition-colors">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between mb-3">
+        {/* First Row: Category, Status, Actions */}
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-base">{categoryIcon}</span>
             <Badge 
               variant="outline" 
               className={cn("text-xs font-medium border", categoryColors[template.category])}
             >
+              <span className="mr-1">{categoryIcon}</span>
               {template.category}
             </Badge>
             <Badge 
@@ -123,19 +124,23 @@ export function TemplateCardV2({
           </DropdownMenu>
         </div>
         
-        <div>
-          <h3 className="text-header font-h6 leading-tight mb-1">
+        {/* Second Row: Template Title (Bold) */}
+        <div className="mb-3">
+          <h3 className="text-header font-bold leading-tight mb-2">
             {template.name}
           </h3>
-          <p className="text-body font-body3 leading-relaxed mb-2">
+          {/* Subject Line (Regular Weight) */}
+          <p className="text-body font-body3 leading-relaxed text-sm">
             {template.subject}
           </p>
-          {template.description && (
-            <p className="text-caption font-body3 leading-relaxed">
-              {template.description}
-            </p>
-          )}
         </div>
+        
+        {/* Description */}
+        {template.description && (
+          <p className="text-caption font-body3 leading-relaxed text-sm mb-3">
+            {template.description}
+          </p>
+        )}
       </CardHeader>
       
       <CardContent className="pt-0 pb-3">
