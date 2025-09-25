@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { VariableTooltip } from "@/components/ui/variable-tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Save, Send, Eye, Copy, Settings, Plus, X, Paperclip, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,12 +21,45 @@ interface TemplateEditorProps {
   onSave: (template: any) => void;
 }
 
-const variableCategories = {
-  load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions", "LoadStatus", "PreviousStatus", "OrderNumber", "PONumber", "TotalBillable", "CarrierTotalPayable", "SalesManager", "AccountManager", "CustomerServiceRep", "Dispatcher"],
-  statuses: ["Dispatched", "Cancelled", "Released", "InTransit", "Delivered", "Invoiced", "Completed"],
-  carrier: ["CarrierName", "CarrierEmail", "CarrierMC", "DriverName", "DriverEmails"],
-  customer: ["Customer/Broker3PL"],
-  financial: ["InvoiceId", "PaymentTerms", "InvoiceDueDate"]
+// Variable categories by template category
+const getCategoryVariables = (category: string) => {
+  const allVariables = {
+    load: ["LoadID", "LoadWeight", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "SpecialInstructions", "LoadStatus", "PreviousStatus", "OrderNumber", "PONumber", "TotalBillable", "CarrierTotalPayable", "SalesManager", "AccountManager", "CustomerServiceRep", "Dispatcher", "TripNumber"],
+    statuses: ["Dispatched", "Cancelled", "Released", "InTransit", "Delivered", "Invoiced", "Completed", "Paid"],
+    carrier: ["CarrierName", "CarrierEmail", "CarrierMC", "DriverName", "DriverEmails"],
+    customer: ["Customer/Broker3PL"],
+    financial: ["InvoiceId", "PaymentTerms", "InvoiceDueDate"],
+    user: ["User Name", "User Email"]
+  };
+
+  switch (category) {
+    case "operational":
+      return {
+        load: allVariables.load.filter(v => v !== "TripNumber"),
+        statuses: allVariables.statuses.filter(v => v !== "Paid"),
+        carrier: allVariables.carrier,
+        customer: allVariables.customer
+      };
+    case "financial":
+      return {
+        load: allVariables.load.filter(v => !["PreviousStatus", "TripNumber"].includes(v)),
+        statuses: ["Released", "Delivered", "Invoiced", "Completed", "Paid"],
+        carrier: allVariables.carrier,
+        customer: allVariables.customer,
+        financial: allVariables.financial
+      };
+    case "marketplace":
+      return {
+        load: ["LoadWeight", "PickupDate", "DeliveryDate", "TripNumber"]
+      };
+    case "onboarding":
+      return {
+        carrier: ["CarrierName", "CarrierEmail", "CarrierMC"],
+        user: allVariables.user
+      };
+    default:
+      return allVariables;
+  }
 };
 
 const variableDescriptions: Record<string, { name: string; description: string; example: string }> = {
@@ -48,15 +82,15 @@ const variableDescriptions: Record<string, { name: string; description: string; 
 
 export function TemplateEditor({ templateId, onBack, onSave }: TemplateEditorProps) {
   const [template, setTemplate] = useState({
-    name: "Load Released Notification",
-    subject: "Load {{LoadID}} Released - Ready for Pickup from {{PickupLocation}}",
+    name: templateId ? "Load Released Notification" : "",
+    subject: templateId ? "Load {{LoadID}} Released - Ready for Pickup from {{PickupLocation}}" : "",
     category: "operational",
-    description: "Automated notification when load is released and ready for carrier pickup",
+    description: templateId ? "Automated notification when load is released and ready for carrier pickup" : "",
     fromAddress: "dispatch@company.com",
-    replyTo: "dispatch@company.com",
-    ccAddresses: ["operations@company.com"],
+    replyTo: templateId ? "{{CarrierEmail}}" : "",
+    ccAddresses: templateId ? ["operations@company.com"] : [],
     bccAddresses: [],
-    emailBody: `Dear {{CarrierName}},
+    emailBody: templateId ? `Dear {{CarrierName}},
 
 Load **{{LoadID}}** has been released and is ready for pickup.
 
@@ -70,7 +104,7 @@ Please confirm receipt and provide your ETA for pickup.
 Questions? Contact us or reply to this email.
 
 Best regards,  
-Dispatch Team`,
+Dispatch Team` : "",
     attachedDocuments: [],
     variables: ["LoadID", "CarrierName", "PickupLocation", "DeliveryLocation", "PickupDate", "DeliveryDate", "LoadWeight", "SpecialInstructions"]
   });
@@ -78,7 +112,7 @@ Dispatch Team`,
   const [activeTab, setActiveTab] = useState("content");
   const [newCcEmail, setNewCcEmail] = useState("");
   const [newBccEmail, setNewBccEmail] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
+  const [showTestDialog, setShowTestDialog] = useState(false);
 
   const addEmailAddress = (type: 'cc' | 'bcc', email: string) => {
     if (email && email.includes('@')) {
@@ -106,12 +140,19 @@ Dispatch Team`,
     }));
   };
 
-  const handlePreview = () => {
-    setShowPreview(!showPreview);
+  const handleTest = () => {
+    setShowTestDialog(true);
   };
 
-  const handleTest = () => {
+  const handleConfirmTest = () => {
     console.log("Send test email");
+    setShowTestDialog(false);
+  };
+
+  // Check if variables are present in email fields
+  const hasVariablesInEmails = () => {
+    const allEmails = [template.replyTo, ...template.ccAddresses, ...template.bccAddresses].join(' ');
+    return /\{\{.*?\}\}/.test(allEmails);
   };
 
   const handleSave = () => {
@@ -141,10 +182,6 @@ Dispatch Team`,
             <Badge className="w-4 h-4 mr-2" />
             Activate Template
           </Button>
-          <Button variant="outline" onClick={handlePreview}>
-            <Eye className="w-4 h-4 mr-2" />
-            Preview
-          </Button>
           <Button onClick={handleTest} className="bg-gradient-primary hover:bg-primary-hover">
             <Send className="w-4 h-4 mr-2" />
             Test Send
@@ -164,19 +201,24 @@ Dispatch Team`,
               {/* Template Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Template Name</Label>
+                  <Label htmlFor="name" className="flex items-center gap-1">
+                    Template Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="name"
                     value={template.name}
                     onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter template name"
+                    placeholder="e.g., Load Release Notification"
+                    className={!template.name ? "border-red-500" : ""}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category" className="flex items-center gap-1">
+                    Category <span className="text-red-500">*</span>
+                  </Label>
                   <Select value={template.category} onValueChange={(value) => setTemplate(prev => ({ ...prev, category: value }))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select template category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="operational">🚛 Operational Workflows</SelectItem>
@@ -190,41 +232,51 @@ Dispatch Team`,
 
               {/* Subject Line */}
               <div>
-                <Label htmlFor="subject">Subject Line *</Label>
+                <Label htmlFor="subject" className="flex items-center gap-1">
+                  Subject Line <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="subject"
                   value={template.subject}
                   onChange={(e) => setTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Enter email subject with {{variables}}"
-                  className={!template.subject ? "border-destructive" : ""}
+                  placeholder="e.g., Load {{LoadID}} - Status Update"
+                  className={!template.subject ? "border-red-500" : ""}
                 />
                 {!template.subject && (
-                  <p className="text-xs text-destructive mt-1">Subject line is required</p>
+                  <p className="text-xs text-red-500 mt-1">Subject line is required</p>
                 )}
               </div>
 
-              {/* Description */}
+              {/* Template Description */}
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="flex items-center gap-1">
+                  Template Description <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   value={template.description}
                   onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
                   rows={2}
-                  placeholder="Brief description of this template"
+                  placeholder="Brief description of when and why this template is used"
+                  className={!template.description ? "border-red-500" : ""}
                 />
+                {!template.description && (
+                  <p className="text-xs text-red-500 mt-1">Template description is required</p>
+                )}
               </div>
 
               {/* Email Body */}
               <div>
-                <Label htmlFor="emailBody">Email Body *</Label>
+                <Label htmlFor="emailBody" className="flex items-center gap-1">
+                  Email Body <span className="text-red-500">*</span>
+                </Label>
                 <RichTextEditor
                   content={template.emailBody}
                   onChange={(content) => setTemplate(prev => ({ ...prev, emailBody: content }))}
-                  placeholder="Enter your email content..."
+                  placeholder="Write your email content here. Use {{variables}} to insert dynamic data..."
                 />
                 {!template.emailBody && (
-                  <p className="text-xs text-destructive mt-1">Email body is required</p>
+                  <p className="text-xs text-red-500 mt-1">Email body is required</p>
                 )}
               </div>
 
@@ -235,23 +287,32 @@ Dispatch Team`,
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="fromAddress">From Address *</Label>
+                      <Label htmlFor="fromAddress" className="flex items-center gap-1">
+                        From Address <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="fromAddress"
                         value={template.fromAddress}
-                        onChange={(e) => setTemplate(prev => ({ ...prev, fromAddress: e.target.value }))}
-                        placeholder="dispatch@company.com or {{CarrierEmail}}"
+                        disabled
+                        className="bg-muted text-muted-foreground"
+                        placeholder="Will use details from Brand Assets"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Must be verified domain or email variable</p>
+                      <p className="text-xs text-muted-foreground mt-1">Automatically configured from Brand Assets settings</p>
                     </div>
                      <div>
-                       <Label htmlFor="replyTo">To:</Label>
+                       <Label htmlFor="replyTo" className="flex items-center gap-1">
+                         To: <span className="text-red-500">*</span>
+                       </Label>
                        <Input
                          id="replyTo"
                          value={template.replyTo}
                          onChange={(e) => setTemplate(prev => ({ ...prev, replyTo: e.target.value }))}
-                         placeholder="support@company.com or {{CarrierEmail}}"
+                         placeholder="{{CarrierEmail}} or recipient@company.com"
+                         className={!template.replyTo ? "border-red-500" : ""}
                        />
+                       {!template.replyTo && (
+                         <p className="text-xs text-red-500 mt-1">To address is required</p>
+                       )}
                      </div>
                   </div>
 
@@ -261,7 +322,7 @@ Dispatch Team`,
                       <Input
                         value={newCcEmail}
                         onChange={(e) => setNewCcEmail(e.target.value)}
-                        placeholder="email@company.com or {{CarrierEmail}}"
+                        placeholder="Optional: {{CarrierEmail}} or email@company.com"
                         onKeyPress={(e) => e.key === 'Enter' && addEmailAddress('cc', newCcEmail)}
                       />
                       <Button size="sm" onClick={() => addEmailAddress('cc', newCcEmail)}>
@@ -279,6 +340,12 @@ Dispatch Team`,
                         </Badge>
                       ))}
                     </div>
+                    {template.ccAddresses.some(email => /\{\{.*?\}\}/.test(email)) && (
+                      <div className="flex items-start gap-2 mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800">
+                        <AlertTriangle className="w-4 h-4 mt-0.5 text-orange-600" />
+                        <span>Variables in CC may be empty during sending. Email might fail if all CC addresses are empty.</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -287,7 +354,7 @@ Dispatch Team`,
                       <Input
                         value={newBccEmail}
                         onChange={(e) => setNewBccEmail(e.target.value)}
-                        placeholder="email@company.com or {{AccountManagerEmail}}"
+                        placeholder="Optional: {{AccountManagerEmail}} or email@company.com"
                         onKeyPress={(e) => e.key === 'Enter' && addEmailAddress('bcc', newBccEmail)}
                       />
                       <Button size="sm" onClick={() => addEmailAddress('bcc', newBccEmail)}>
@@ -305,6 +372,12 @@ Dispatch Team`,
                         </Badge>
                       ))}
                     </div>
+                    {template.bccAddresses.some(email => /\{\{.*?\}\}/.test(email)) && (
+                      <div className="flex items-start gap-2 mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800">
+                        <AlertTriangle className="w-4 h-4 mt-0.5 text-orange-600" />
+                        <span>Variables in BCC may be empty during sending. Email might fail if all BCC addresses are empty.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -326,50 +399,14 @@ Dispatch Team`,
           </Card>
         </div>
 
-        {/* Variables Sidebar + Preview */}
+        {/* Variables Sidebar */}
         <div className="space-y-6">
-          {showPreview && (
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  Email Preview
-                </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowPreview(false)}
-                  className="w-full"
-                >
-                  Hide Preview
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div><strong>Subject:</strong> {template.subject}</div>
-                  <div className="border rounded p-3 bg-muted/20" dangerouslySetInnerHTML={{ __html: template.emailBody }} />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
           <Card className="sticky top-6">
             <CardHeader>
               <CardTitle className="text-sm">Available Variables</CardTitle>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="flex-1"
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  {showPreview ? 'Hide' : 'Show'} Preview
-                </Button>
-              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                  {Object.entries(variableCategories).map(([category, variables]) => (
+              {Object.entries(getCategoryVariables(template.category)).map(([category, variables]) => (
                 <div key={category}>
                   <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">{category}</h4>
                   <div className="space-y-1">
@@ -381,8 +418,8 @@ Dispatch Team`,
                         <button
                           onClick={() => insertVariable(variable, 'emailBody')}
                           className={cn(
-                            "w-full text-left px-2 py-1 text-xs rounded hover:bg-accent hover:text-accent-foreground",
-                            "transition-colors duration-200 cursor-pointer"
+                            "w-full text-left px-2 py-1 text-xs rounded transition-colors duration-200 cursor-pointer",
+                            "hover:bg-orange-100 hover:text-orange-800 border border-transparent hover:border-orange-300"
                           )}
                           draggable
                           onDragStart={(e) => {
@@ -400,6 +437,38 @@ Dispatch Team`,
           </Card>
         </div>
       </div>
+
+      {/* Test Send Dialog */}
+      <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Test Email</DialogTitle>
+            <DialogDescription>
+              This test email will be sent <strong>only to your current user account</strong>, ignoring the default Email Routing settings. 
+              The email will use mock/sample data to replace all template variables.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+              <div className="font-medium mb-1">Test Details:</div>
+              <ul className="space-y-1 text-xs">
+                <li>• Email will be sent to your logged-in user email only</li>
+                <li>• All variables will be replaced with realistic sample data</li>
+                <li>• Email routing rules will be bypassed for this test</li>
+                <li>• This helps you verify template formatting and content</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTestDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmTest}>
+              Send Test Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
